@@ -71,12 +71,14 @@
     <property name="title">
      <string>开始</string>
     </property>
-    <addaction name="actionload_pic"/>
+    <addaction name="action_create_pro"/>
+    <addaction name="action_import_pro"/>
    </widget>
    <widget class="QMenu" name="menu_2">
     <property name="title">
      <string>文件</string>
     </property>
+    <addaction name="actionload_pic"/>
    </widget>
    <widget class="QMenu" name="menu_3">
     <property name="title">
@@ -206,9 +208,9 @@
     </layout>
    </widget>
   </widget>
-  <action name="actionload_pic">
+  <action name="action_create_pro">
    <property name="text">
-    <string>导入照片</string>
+    <string>新建项目</string>
    </property>
   </action>
   <action name="camera_action">
@@ -302,6 +304,16 @@
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionload_pic">
+   <property name="text">
+    <string>导入照片</string>
+   </property>
+  </action>
+  <action name="action_import_pro">
+   <property name="text">
+    <string>打开项目</string>
    </property>
   </action>
  </widget>

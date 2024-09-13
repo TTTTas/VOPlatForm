@@ -21,6 +21,12 @@
       <UniqueIdentifier>{639EADAA-A684-42e4-A9AD-28FC9BCB8F7C}</UniqueIdentifier>
       <Extensions>ts</Extensions>
     </Filter>
+    <Filter Include="Header Files\project_head">
+      <UniqueIdentifier>{be3189f9-4523-4b3b-b155-13994b02c653}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\project_cc">
+      <UniqueIdentifier>{90cdb784-916a-4583-90d9-2eb3f8a65a71}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="voplatform.qrc">
@@ -46,5 +52,37 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="comm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Calibration_pro.cpp">
+      <Filter>Source Files\project_cc</Filter>
+    </ClCompile>
+    <ClCompile Include="Matching_pro.cpp">
+      <Filter>Source Files\project_cc</Filter>
+    </ClCompile>
+    <ClCompile Include="VO_pro.cpp">
+      <Filter>Source Files\project_cc</Filter>
+    </ClCompile>
+    <ClCompile Include="projects.cpp">
+      <Filter>Source Files\project_cc</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Calibration_pro.h">
+      <Filter>Header Files\project_head</Filter>
+    </ClInclude>
+    <ClInclude Include="comm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Matching_pro.h">
+      <Filter>Header Files\project_head</Filter>
+    </ClInclude>
+    <ClInclude Include="VO_pro.h">
+      <Filter>Header Files\project_head</Filter>
+    </ClInclude>
+    <ClInclude Include="projects.h">
+      <Filter>Header Files\project_head</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

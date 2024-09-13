@@ -99,13 +99,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="projects.cpp" />
+    <ClCompile Include="VO_pro.cpp" />
     <QtRcc Include="voplatform.qrc" />
     <QtUic Include="voplatform.ui" />
     <QtMoc Include="voplatform.h" />
+    <ClCompile Include="Calibration_pro.cpp" />
+    <ClCompile Include="comm.cpp" />
+    <ClCompile Include="Matching_pro.cpp" />
     <ClCompile Include="voplatform.cpp" />
     <ClCompile Include="main.cpp" />
     <None Include="VOPlatForm.ico" />
     <ResourceCompile Include="VOPlatForm.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Calibration_pro.h" />
+    <ClInclude Include="comm.h" />
+    <ClInclude Include="Matching_pro.h" />
+    <ClInclude Include="projects.h" />
+    <ClInclude Include="VO_pro.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

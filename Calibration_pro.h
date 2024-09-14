@@ -20,6 +20,8 @@ public:
     // 读取标定项目的下一行信息
     QString nextCalibrationLine();
 
+    QString folder;
+
 private:
     // 额外的成员变量或方法可以根据需要添加
     // 例如，可以用来存储或处理特定的标定数据

@@ -45,9 +45,9 @@ void VOPlatForm::Init_pro_tree()
     pro_tree = new QStandardItemModel();
 
     // 创建项目类别
-    calibrationItem = new QStandardItem(QString::fromLocal8Bit("标定项目 "));
-    matchingItem = new QStandardItem(QString::fromLocal8Bit("匹配项目 "));
-    voItem = new QStandardItem(QString::fromLocal8Bit("VO项目 "));
+    calibrationItem = new QStandardItem(QIcon("./resource/camera1.png"), QString::fromLocal8Bit("标定项目 "));
+    matchingItem = new QStandardItem(QIcon("./resource/match.png"), QString::fromLocal8Bit("匹配项目 "));
+    voItem = new QStandardItem(QIcon("./resource/video.png"), QString::fromLocal8Bit("VO项目 "));
 
     // 将项目类别添加到模型中
     pro_tree->appendRow(calibrationItem);

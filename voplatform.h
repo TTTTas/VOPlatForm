@@ -10,10 +10,11 @@
 #include "ui_voplatform.h"
 #include <qstandarditemmodel.h>
 
-#include "projects.h"
+#include "Project_Base.h"
 #include "Calibration_pro.h"
 #include "Matching_pro.h"
 #include "VO_pro.h"
+#include "NewProjectDialog.h"
 
 // TODO
 // 1. 项目创建函数未编写
@@ -58,5 +59,8 @@ private slots:
     void resizeEvent(QResizeEvent* event) override;
 
     // 项目函数
+    void onCreateNewPro();
+    void onOpenPro();
+    void onSavePro();
     void onLoadProjects();
 };

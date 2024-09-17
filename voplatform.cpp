@@ -35,7 +35,21 @@ void VOPlatForm::Init_connect_slots()
     connect(ui.actionload_pic, &QAction::triggered, this, &VOPlatForm::onLoadPicture);
     connect(resizeTimer, &QTimer::timeout, this, &VOPlatForm::onResizeTimeout);
 
-    // 项目树信号槽
+    // 项目信号槽
+
+    // 新建项目
+    connect(ui.action_new_pro, &QAction::triggered, this, &VOPlatForm::onCreateNewPro);
+    connect(ui.action_create_pro, &QAction::triggered, this, &VOPlatForm::onCreateNewPro);
+
+    // 打开项目
+    connect(ui.action_open_pro, &QAction::triggered, this, &VOPlatForm::onOpenPro);
+    connect(ui.action_import_pro, &QAction::triggered, this, &VOPlatForm::onOpenPro);
+
+    // 保存项目
+    connect(ui.actionsave_pro, &QAction::triggered, this, &VOPlatForm::onSavePro);
+    connect(ui.action_save_pro, &QAction::triggered, this, &VOPlatForm::onSavePro);
+
+    // 打开工作目录
     connect(ui.select_pro_btn, &QToolButton::clicked, this, &VOPlatForm::onLoadProjects);
 }
 
@@ -46,7 +60,7 @@ void VOPlatForm::Init_pro_tree()
 
     // 创建项目类别
     calibrationItem = new QStandardItem(QIcon("./resource/camera1.png"), QString::fromLocal8Bit("标定项目 "));
-    matchingItem = new QStandardItem(QIcon("./resource/match.png"), QString::fromLocal8Bit("匹配项目 "));
+    matchingItem = new QStandardItem(QIcon("./resource/match.png"), QString::fromLocal8Bit("对极几何项目 "));
     voItem = new QStandardItem(QIcon("./resource/video.png"), QString::fromLocal8Bit("VO项目 "));
 
     // 将项目类别添加到模型中
@@ -99,6 +113,76 @@ void VOPlatForm::resizeEvent(QResizeEvent* event)
     resizeTimer->start(100);  // 延迟 100ms 更新
 }
 
+void VOPlatForm::onCreateNewPro()
+{
+    NewProjectDialog dialog(this);
+    if (dialog.exec() == QDialog::Accepted) {
+        Project_Base newProject;
+        dialog.initializeProject(newProject);
+        switch (newProject.getPro_Type()) 
+        {
+        case 1:
+            calibrationFiles_.append(new Calibration_pro(newProject.getPro_Path()));
+            calibrationItem->appendRow(new QStandardItem(newProject.getPro_Name()));
+            break;
+        case 2:
+            matchingFiles_.append(new Matching_pro(newProject.getPro_Path()));
+            matchingItem->appendRow(new QStandardItem(newProject.getPro_Name()));
+            break;
+        case 3:
+            voFiles_.append(new VO_pro(newProject.getPro_Path()));
+            voItem->appendRow(new QStandardItem(newProject.getPro_Name()));
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void VOPlatForm::onOpenPro()
+{
+    // 使用 QFileDialog::getOpenFileNames 打开文件选择对话框
+    QStringList filePaths = QFileDialog::getOpenFileNames(
+        nullptr,                         // 父窗口
+        QString::fromLocal8Bit("选择文件"),                      // 对话框标题
+        "",                              // 默认路径
+        QString::fromLocal8Bit("所有文件 (*.*);;文本文件 (*.txt)")  // 过滤器
+    );
+
+    // 检查是否选择了文件
+    if (!filePaths.isEmpty()) {
+        // 遍历选择的文件
+        foreach(const QString & filePath, filePaths) 
+        {
+            Project_Base pro(filePath);
+            switch (pro.getPro_Type()) {
+            case 1:
+                calibrationFiles_.append(new Calibration_pro(filePath));
+                calibrationItem->appendRow(new QStandardItem(pro.getPro_Name()));
+                break;
+            case 2:
+                matchingFiles_.append(new Matching_pro(filePath));
+                matchingItem->appendRow(new QStandardItem(pro.getPro_Name()));
+                break;
+            case 3:
+                voFiles_.append(new VO_pro(filePath));
+                voItem->appendRow(new QStandardItem(pro.getPro_Name()));
+                break;
+            default:
+                break;
+            }
+        }
+    }
+    else {
+        qDebug() << "No files selected.";
+    }
+}
+
+void VOPlatForm::onSavePro()
+{
+
+}
+
 void VOPlatForm::onLoadProjects()
 {
     // 打开文件夹选择对话框
@@ -112,8 +196,11 @@ void VOPlatForm::onLoadProjects()
 
     // 清除之前的项目
     calibrationFiles_.clear();
+    calibrationItem->clearData();
     matchingFiles_.clear();
+    matchingItem->clearData();
     voFiles_.clear();
+    voItem->clearData();
 
     // 递归搜索 .pro 文件
     QDir dir(workspace);

@@ -1,7 +1,8 @@
 #pragma once
 #ifndef CALIBRATION_PRO_H
 #define CALIBRATION_PRO_H
-#include "projects.h"
+
+#include "Project_Base.h"
 
 // TODO
 // 0. 项目文件结构未编写

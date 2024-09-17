@@ -1,6 +1,6 @@
 #pragma once
-#ifndef PROJECTS_H
-#define PROJECTS_H
+#ifndef PROJECT_BASE_H
+#define PROJECT_BASE_H
 
 #include <qstring.h>
 #include <QFile>
@@ -12,6 +12,7 @@
 // Pro_Data
 class Project_Base {
 public:
+    Project_Base();
     Project_Base(QString path);
     Project_Base(QString path, QString Pro_type, QString Pro_name = "新建项目");
     ~Project_Base() 
@@ -49,11 +50,22 @@ public:
         return Pro_Name;
     }
 
+    QString getPro_Path() const
+    {
+        return Pro_Path;
+    }
+    
     int getPro_Type() const
     {
         return Pro_Type;
     }
 
+    void setProName(const QString& name) { Pro_Name = name; }
+    void setProPath(const QString& path) { Pro_Path = path; }
+    void setProType(int type) { Pro_Type = type; }
+
+    void out_head_info();
+    bool open_file(QString path);
 private:
     QFile file_;
     QTextStream textStream_;

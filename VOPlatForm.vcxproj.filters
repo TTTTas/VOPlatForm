@@ -67,6 +67,9 @@
     <ClCompile Include="projects.cpp">
       <Filter>Source Files\project_cc</Filter>
     </ClCompile>
+    <ClCompile Include="..\OpenCV1\ChessboardCalibration.cpp">
+      <Filter>Source Files\project_cc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Calibration_pro.h">
@@ -82,6 +85,9 @@
       <Filter>Header Files\project_head</Filter>
     </ClInclude>
     <ClInclude Include="projects.h">
+      <Filter>Header Files\project_head</Filter>
+    </ClInclude>
+    <ClInclude Include="..\OpenCV1\ChessboardCalibration.h">
       <Filter>Header Files\project_head</Filter>
     </ClInclude>
   </ItemGroup>

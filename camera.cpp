@@ -1,4 +1,4 @@
-#include "comm.h"
+#include "camera.h"
 #include <iostream>
 
 // TODO

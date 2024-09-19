@@ -18,6 +18,10 @@
   <property name="windowTitle">
    <string>VOPlatForm</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>resource/winicon.png</normaloff>resource/winicon.png</iconset>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <property name="spacing">
@@ -89,7 +93,7 @@
    </widget>
    <widget class="QMenu" name="menu_3">
     <property name="title">
-     <string>工具</string>
+     <string>解算</string>
     </property>
     <addaction name="actioncalibration"/>
     <addaction name="actionmatching"/>

@@ -1,6 +1,6 @@
 #pragma once
-#ifndef COMM_H
-#define COMM_H
+#ifndef CAMERA_H
+#define CAMERA_H
 
 #include <opencv2/opencv.hpp>
 

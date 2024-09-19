@@ -99,6 +99,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ChessboardCalibration.cpp" />
     <ClCompile Include="projects.cpp" />
     <ClCompile Include="VO_pro.cpp" />
     <QtRcc Include="voplatform.qrc" />
@@ -114,6 +115,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Calibration_pro.h" />
+    <ClInclude Include="ChessboardCalibration.h" />
     <ClInclude Include="comm.h" />
     <ClInclude Include="Matching_pro.h" />
     <ClInclude Include="projects.h" />

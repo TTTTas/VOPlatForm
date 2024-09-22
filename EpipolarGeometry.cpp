@@ -5,15 +5,15 @@ using namespace std;
 using namespace cv;
 
 // 初始化静态常量
-const double ImageProcessing::scale_factor = 0.25f;
-const string ImageProcessing::filename001 = "./Input/tea 1.JPG";
-const string ImageProcessing::filename002 = "./Input/tea 2.JPG";
-const Mat ImageProcessing::K = (Mat_<double>(3, 3) << 1354.222062716567, 0, 204.9442952614041,
+const double EpipolarGeometry::scale_factor = 0.25f;
+const string EpipolarGeometry::filename001 = "./Input/tea 1.JPG";
+const string EpipolarGeometry::filename002 = "./Input/tea 2.JPG";
+const Mat EpipolarGeometry::K = (Mat_<double>(3, 3) << 1354.222062716567, 0, 204.9442952614041,
     0, 1305.36634809663, 89.65190111179771,
     0, 0, 1);
 
 // 降低图像画质到1080P
-Mat ImageProcessing::resizeImage(const Mat& image) {
+Mat EpipolarGeometry::resizeImage(const Mat& image) {
     Mat resized;
     const int maxHeight = 1080;
     const int maxWidth = 1920;
@@ -36,7 +36,7 @@ Mat ImageProcessing::resizeImage(const Mat& image) {
 }
 
 // 图像预处理函数 我认为需要调整
-Mat ImageProcessing::preprocessImage(const Mat& image) {
+Mat EpipolarGeometry::preprocessImage(const Mat& image) {
     Mat gray, blurred, equalized, sharpened;
 
     // 1. 转换为灰度图像
@@ -59,7 +59,7 @@ Mat ImageProcessing::preprocessImage(const Mat& image) {
 }
 
 // 使用ORB或SIFT提取特征点
-void ImageProcessing::detectAndMatchFeaturesBF(const Mat& img1, const Mat& img2,
+void EpipolarGeometry::detectAndMatchFeaturesBF(const Mat& img1, const Mat& img2,
     vector<KeyPoint>& keypoints1, vector<KeyPoint>& keypoints2,
     vector<DMatch>& matches, Mat& descriptors1, Mat& descriptors2) {
 
@@ -77,7 +77,7 @@ void ImageProcessing::detectAndMatchFeaturesBF(const Mat& img1, const Mat& img2,
 
 // 14讲 ： 特征点较多的情况使用FB匹配方法更为快速
 // 使用Flann-based matcher进行匹配，并应用Ratio Test
-void ImageProcessing::detectAndMatchFeaturesFB(const Mat& img1, const Mat& img2,
+void EpipolarGeometry::detectAndMatchFeaturesFB(const Mat& img1, const Mat& img2,
     vector<KeyPoint>& keypoints1, vector<KeyPoint>& keypoints2,
     vector<DMatch>& matches, Mat& descriptors1, Mat& descriptors2) {
 
@@ -114,7 +114,7 @@ void ImageProcessing::detectAndMatchFeaturesFB(const Mat& img1, const Mat& img2,
 }
 
 // 剔除粗差匹配
-vector<DMatch> ImageProcessing::filterMatchesWithFundamentalMat(const vector<KeyPoint>& keypoints1,
+vector<DMatch> EpipolarGeometry::filterMatchesWithFundamentalMat(const vector<KeyPoint>& keypoints1,
     const vector<KeyPoint>& keypoints2, const vector<DMatch>& matches, Mat& F) {
 
     // 提取匹配点对
@@ -140,7 +140,7 @@ vector<DMatch> ImageProcessing::filterMatchesWithFundamentalMat(const vector<Key
 }
 
 
-void ImageProcessing::drawMatchesWithLines(const Mat& img1, const Mat& img2,
+void EpipolarGeometry::drawMatchesWithLines(const Mat& img1, const Mat& img2,
     const vector<Point2f>& points1, const vector<Point2f>& points2, const vector<DMatch>& matches) {
 
     // 创建一个拼接的图像
@@ -173,7 +173,7 @@ void ImageProcessing::drawMatchesWithLines(const Mat& img1, const Mat& img2,
 }
 
 // 绘制极线
-void ImageProcessing::drawEpilines(const Mat& img1, const Mat& img2,
+void EpipolarGeometry::drawEpilines(const Mat& img1, const Mat& img2,
     const vector<Point2f>& points1, const vector<Point2f>& points2, const Mat& F) {
 
     // 计算极线
@@ -205,7 +205,7 @@ void ImageProcessing::drawEpilines(const Mat& img1, const Mat& img2,
 }
 
 // 计算本质矩阵并进行三角化
-void ImageProcessing::triangulatePointsFromMatches(const Mat& K, const vector<Point2f>& points1,
+void EpipolarGeometry::triangulatePointsFromMatches(const Mat& K, const vector<Point2f>& points1,
     const vector<Point2f>& points2, const Mat& R, const Mat& t) {
 
     // 投影矩阵
@@ -227,7 +227,7 @@ void ImageProcessing::triangulatePointsFromMatches(const Mat& K, const vector<Po
 
 }
 
-void ImageProcessing::Run() {
+void EpipolarGeometry::Run() {
     // 读取影像
     Mat img1 = imread(filename001);
     Mat img2 = imread(filename002);

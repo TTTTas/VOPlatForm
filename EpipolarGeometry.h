@@ -1,6 +1,6 @@
 #pragma once
-#ifndef IMAGEPROCESSING_H
-#define IMAGEPROCESSING_H
+#ifndef EPIPOLARGEOMETRY_H
+#define EPIPOLARGEOMETRY_H
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
@@ -10,7 +10,7 @@
 #include <opencv2/calib3d.hpp>
 #include <string>
 
-class ImageProcessing {
+class EpipolarGeometry {
 public:
     static void Run(); // 对极主程序
 
@@ -46,4 +46,4 @@ public:
         const std::vector<cv::Point2f>& points2, const cv::Mat& R, const cv::Mat& t);
 };
 
-#endif // IMAGEPROCESSING_H
+#endif // EpipolarGeometry_H

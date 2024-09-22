@@ -67,6 +67,12 @@
     <ClCompile Include="projects.cpp">
       <Filter>Source Files\project_cc</Filter>
     </ClCompile>
+    <ClCompile Include="ChessboardCalibration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EpipolarGeometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Calibration_pro.h">
@@ -83,6 +89,12 @@
     </ClInclude>
     <ClInclude Include="projects.h">
       <Filter>Header Files\project_head</Filter>
+    </ClInclude>
+    <ClInclude Include="ChessboardCalibration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EpipolarGeometry.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -99,13 +99,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="NewProjectDialog.cpp" />
     <ClCompile Include="projects.cpp" />
     <ClCompile Include="VO_pro.cpp" />
     <QtRcc Include="voplatform.qrc" />
     <QtUic Include="voplatform.ui" />
     <QtMoc Include="voplatform.h" />
     <ClCompile Include="Calibration_pro.cpp" />
-    <ClCompile Include="comm.cpp" />
+    <ClCompile Include="camera.cpp" />
     <ClCompile Include="Matching_pro.cpp" />
     <ClCompile Include="voplatform.cpp" />
     <ClCompile Include="main.cpp" />
@@ -114,10 +115,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Calibration_pro.h" />
-    <ClInclude Include="comm.h" />
+    <ClInclude Include="camera.h" />
     <ClInclude Include="Matching_pro.h" />
-    <ClInclude Include="projects.h" />
+    <QtMoc Include="NewProjectDialog.h" />
+    <ClInclude Include="Project_Base.h" />
     <ClInclude Include="VO_pro.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="resource\camera1.png" />
+    <Image Include="resource\match.png" />
+    <Image Include="resource\video.png" />
+    <Image Include="resource\winicon.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

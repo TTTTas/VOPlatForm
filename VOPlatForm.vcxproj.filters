@@ -52,7 +52,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="comm.cpp">
+    <ClCompile Include="camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Calibration_pro.cpp">
@@ -67,12 +67,15 @@
     <ClCompile Include="projects.cpp">
       <Filter>Source Files\project_cc</Filter>
     </ClCompile>
+    <ClCompile Include="NewProjectDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Calibration_pro.h">
       <Filter>Header Files\project_head</Filter>
     </ClInclude>
-    <ClInclude Include="comm.h">
+    <ClInclude Include="camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Matching_pro.h">
@@ -81,8 +84,27 @@
     <ClInclude Include="VO_pro.h">
       <Filter>Header Files\project_head</Filter>
     </ClInclude>
-    <ClInclude Include="projects.h">
+    <ClInclude Include="Project_Base.h">
       <Filter>Header Files\project_head</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="NewProjectDialog.h">
+      <Filter>Header Files\project_head</Filter>
+    </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="resource\camera1.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resource\match.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resource\video.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resource\winicon.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

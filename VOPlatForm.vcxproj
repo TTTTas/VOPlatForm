@@ -99,7 +99,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="NewProjectDialog.cpp" />
+    <ClCompile Include="ChessboardCalibration.cpp" />
+    <ClCompile Include="EpipolarGeometry.cpp" />
     <ClCompile Include="projects.cpp" />
     <ClCompile Include="VO_pro.cpp" />
     <QtRcc Include="voplatform.qrc" />
@@ -115,7 +116,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Calibration_pro.h" />
+    <ClInclude Include="ChessboardCalibration.h" />
     <ClInclude Include="camera.h" />
+    <ClInclude Include="EpipolarGeometry.h" />
     <ClInclude Include="Matching_pro.h" />
     <QtMoc Include="NewProjectDialog.h" />
     <ClInclude Include="Project_Base.h" />

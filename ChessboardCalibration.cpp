@@ -1,4 +1,4 @@
-#include "ChessboardCalibration.h"
+ï»¿#include "ChessboardCalibration.h"
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <filesystem>
@@ -6,7 +6,7 @@
 using namespace cv;
 using namespace std;
 
-// ¶¨Òå¾²Ì¬³ÉÔ±±äÁ¿¡ª¡ªÒÔÏÂ³£Á¿ĞèÒª¸ÄÎªÊäÈëÀàµÄ²ÎÊı
+// å®šä¹‰é™æ€æˆå‘˜å˜é‡â€”â€”ä»¥ä¸‹å¸¸é‡éœ€è¦æ”¹ä¸ºè¾“å…¥ç±»çš„å‚æ•°
 const int ChessboardCalibration::board_width = 5;
 const int ChessboardCalibration::board_height = 8;
 const float ChessboardCalibration::square_size = 27.0f;
@@ -15,7 +15,7 @@ const string ChessboardCalibration::folderPath = "./ChessboardPicture";
 
 Size ChessboardCalibration::board_size(board_width, board_height);
 
-// Éú³ÉÆåÅÌ¸ñµÄÊÀ½ç×ø±ê
+// ç”Ÿæˆæ£‹ç›˜æ ¼çš„ä¸–ç•Œåæ ‡
 vector<Point3f> ChessboardCalibration::createKnownBoardPosition(Size boardSize, float squareEdgeLength) {
     vector<Point3f> corners;
     for (int i = 0; i < boardSize.height; i++) {
@@ -26,28 +26,28 @@ vector<Point3f> ChessboardCalibration::createKnownBoardPosition(Size boardSize, 
     return corners;
 }
 
-// ½µµÍÍ¼Ïñ·Ö±æÂÊ
+// é™ä½å›¾åƒåˆ†è¾¨ç‡
 Mat ChessboardCalibration::resizeImage(const Mat& image, double scale_factor) {
     Mat resized;
     resize(image, resized, Size(), scale_factor, scale_factor, INTER_LINEAR);
     return resized;
 }
 
-// Í¼ÏñÔ¤´¦Àí
+// å›¾åƒé¢„å¤„ç†
 Mat ChessboardCalibration::preprocessImage(const Mat& image) {
     Mat gray, blurred, equalized, sharpened;
 
-    // 1. ×ª»»Îª»Ò¶ÈÍ¼Ïñ
+    // 1. è½¬æ¢ä¸ºç°åº¦å›¾åƒ
     cvtColor(image, gray, COLOR_BGR2GRAY);
 
-    // 2. Ê¹ÓÃË«±ßÂË²¨
+    // 2. ä½¿ç”¨åŒè¾¹æ»¤æ³¢
     bilateralFilter(gray, blurred, 9, 75, 75);
 
-    // 3. ×ÔÊÊÓ¦Ö±·½Í¼¾ùºâ»¯
+    // 3. è‡ªé€‚åº”ç›´æ–¹å›¾å‡è¡¡åŒ–
     Ptr<CLAHE> clahe = createCLAHE(2.0, Size(8, 8));
     clahe->apply(blurred, equalized);
 
-    // 4. Í¼ÏñÈñ»¯
+    // 4. å›¾åƒé”åŒ–
     Mat laplacian;
     Laplacian(equalized, laplacian, CV_16S, 3);
     convertScaleAbs(laplacian, laplacian);
@@ -56,7 +56,7 @@ Mat ChessboardCalibration::preprocessImage(const Mat& image) {
     return sharpened;
 }
 
-// »æÖÆ½ÇµãºÍĞòºÅ
+// ç»˜åˆ¶è§’ç‚¹å’Œåºå·
 void ChessboardCalibration::drawCornersWithIndex(Mat& image, const vector<Point2f>& imagePoints) {
     for (size_t i = 0; i < imagePoints.size(); i++) {
         circle(image, imagePoints[i], 5, Scalar(0, 0, 255), 2);
@@ -64,7 +64,7 @@ void ChessboardCalibration::drawCornersWithIndex(Mat& image, const vector<Point2
     }
 }
 
-// ¼ì²âÆåÅÌ¸ñ½Çµã
+// æ£€æµ‹æ£‹ç›˜æ ¼è§’ç‚¹
 bool ChessboardCalibration::findChessboardCornersFromImage(Mat& image, vector<Point2f>& imagePoints) {
     Mat gray;
     if (image.channels() == 1) {
@@ -79,61 +79,65 @@ bool ChessboardCalibration::findChessboardCornersFromImage(Mat& image, vector<Po
     if (found) {
         cornerSubPix(gray, imagePoints, Size(11, 11), Size(-1, -1), TermCriteria(TermCriteria::EPS + TermCriteria::COUNT, 30, 0.001));
         drawCornersWithIndex(image, imagePoints);
-        cout << "ÕÒµ½µÄ½ÇµãÊıÁ¿: " << imagePoints.size() << endl;
+        cout << "æ‰¾åˆ°çš„è§’ç‚¹æ•°é‡: " << imagePoints.size() << endl;
     }
 
     return found;
 }
 
-// Ö´ĞĞÏà»ú±ê¶¨²¢ÏÔÊ¾½á¹û
-void ChessboardCalibration::calibrateAndShowResults(const vector<vector<Point3f>>& worldPoints, const vector<vector<Point2f>>& imagePoints) {
+// æ‰§è¡Œç›¸æœºæ ‡å®šå¹¶æ˜¾ç¤ºç»“æœ
+void ChessboardCalibration::calibrateAndShowResults(cv::Mat& image, const vector<vector<Point3f>>& worldPoints, const vector<vector<Point2f>>& imagePoints) {
     if (imagePoints.size() > 0) {
         Mat cameraMatrix, distCoeffs;
         vector<Mat> rvecs, tvecs;
-        calibrateCamera(worldPoints, imagePoints, board_size, cameraMatrix, distCoeffs, rvecs, tvecs);
+        calibrateCamera(worldPoints, imagePoints, cv::Size(image.rows, image.cols), cameraMatrix, distCoeffs, rvecs, tvecs);
 
         cout << "Camera Matrix: " << cameraMatrix << endl;
         cout << "Distortion Coefficients: " << distCoeffs << endl;
     }
     else {
-        cout << "Î´ÕÒµ½×ã¹»µÄ½Çµã½øĞĞ±ê¶¨£¡" << endl;
+        cout << "æœªæ‰¾åˆ°è¶³å¤Ÿçš„è§’ç‚¹è¿›è¡Œæ ‡å®šï¼" << endl;
     }
 }
 
-// Ïà»ú±ê¶¨-Ö÷³ÌĞò·â×°º¯Êı
+// ç›¸æœºæ ‡å®š-ä¸»ç¨‹åºå°è£…å‡½æ•°
 void ChessboardCalibration::runCalibration() {
     using namespace std;
     using namespace cv;
-    namespace fs = std::filesystem;  // ·½±ãÊ¹ÓÃ±ğÃû
+    namespace fs = std::filesystem;  // æ–¹ä¾¿ä½¿ç”¨åˆ«å
 
     vector<vector<Point3f>> worldPoints;
     vector<vector<Point2f>> imagePoints;
     vector<Point2f> imageCorners;
     vector<Point3f> worldCorners = createKnownBoardPosition(board_size, square_size);
 
-    // ¼ì²éÂ·¾¶ÊÇ·ñ´æÔÚ
+    // æ£€æŸ¥è·¯å¾„æ˜¯å¦å­˜åœ¨
     if (!std::filesystem::exists(folderPath)) {
-        std::cout << "Ö¸¶¨µÄÎÄ¼ş¼Ğ²»´æÔÚ: " << folderPath << std::endl;
+        std::cout << "æŒ‡å®šçš„æ–‡ä»¶å¤¹ä¸å­˜åœ¨: " << folderPath << std::endl;
         return;
     }
 
-    // ±éÀúÖ¸¶¨ÎÄ¼ş¼ĞÄÚµÄËùÓĞ jpg ÎÄ¼ş
+    // éå†æŒ‡å®šæ–‡ä»¶å¤¹å†…çš„æ‰€æœ‰ jpg æ–‡ä»¶
+    Mat image;
     for (const auto& entry : fs::directory_iterator(folderPath)) {
-        // Ö»´¦Àí .jpg ÎÄ¼ş
+        // åªå¤„ç† .jpg æ–‡ä»¶
         if (entry.path().extension() == ".JPG"|| entry.path().extension() == ".jpg"
             || entry.path().extension() == ".JPEG" || entry.path().extension() == ".jpeg"
             || entry.path().extension() == ".png" || entry.path().extension() == ".PNG")
         {
             string filename = entry.path().string();
-            Mat image = imread(filename);
+            image = imread(filename);
 
             if (image.empty()) {
-                cout << "ÎŞ·¨¶ÁÈ¡Í¼Æ¬: " << filename << endl;
+                cout << "æ— æ³•è¯»å–å›¾ç‰‡: " << filename << endl;
                 continue;
             }
 
-            Mat resized_image = resizeImage(image, scale_factor);
-            Mat preprocessed_image = preprocessImage(resized_image);
+            //ä¸ç¼©å°åˆ†è¾¨ç‡é‡ç½®å¤§å°
+            //Mat resized_image = resizeImage(image, scale_factor);
+            //Mat preprocessed_image = preprocessImage(resized_image);
+
+            Mat preprocessed_image = preprocessImage(image);
 
             if (findChessboardCornersFromImage(preprocessed_image, imageCorners)) {
                 imagePoints.push_back(imageCorners);
@@ -147,6 +151,6 @@ void ChessboardCalibration::runCalibration() {
 
     destroyAllWindows();
 
-    // µ÷ÓÃ±ê¶¨º¯Êı
-    calibrateAndShowResults(worldPoints, imagePoints);
+    // è°ƒç”¨æ ‡å®šå‡½æ•°
+    calibrateAndShowResults(image, worldPoints, imagePoints);
 }

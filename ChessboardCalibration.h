@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #ifndef CHESSBOARD_CALIBRATION_H
 #define CHESSBOARD_CALIBRATION_H
@@ -9,7 +9,7 @@
 
 class ChessboardCalibration {
 public:
-    // ¾²Ì¬±äÁ¿ºÍ³£Á¿¶¨Òå
+    // é™æ€å˜é‡å’Œå¸¸é‡å®šä¹‰
     static const int board_width;
     static const int board_height;
     static const float square_size;
@@ -17,15 +17,15 @@ public:
     static const std::string folderPath;
     static cv::Size board_size;
 
-    // ¾²Ì¬·½·¨ÉùÃ÷
+    // é™æ€æ–¹æ³•å£°æ˜
     static std::vector<cv::Point3f> createKnownBoardPosition(cv::Size boardSize, float squareEdgeLength);
     static cv::Mat resizeImage(const cv::Mat& image, double scale_factor);
     static cv::Mat preprocessImage(const cv::Mat& image);
     static bool findChessboardCornersFromImage(cv::Mat& image, std::vector<cv::Point2f>& imagePoints);
     static void drawCornersWithIndex(cv::Mat& image, const std::vector<cv::Point2f>& imagePoints);
-    static void calibrateAndShowResults(const std::vector<std::vector<cv::Point3f>>& worldPoints, const std::vector<std::vector<cv::Point2f>>& imagePoints);
+    static void calibrateAndShowResults(cv::Mat& image, const std::vector<std::vector<cv::Point3f>>& worldPoints, const std::vector<std::vector<cv::Point2f>>& imagePoints);
 
-    // Ö÷³ÌĞò·â×°³É¾²Ì¬·½·¨
+    // ä¸»ç¨‹åºå°è£…æˆé™æ€æ–¹æ³•
     static void runCalibration();
 };
 

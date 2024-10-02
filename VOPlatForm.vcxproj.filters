@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>qml;cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>qrc;rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Form Files">
+      <UniqueIdentifier>{99349809-55BA-4b9d-BF79-8FDBB0286EB3}</UniqueIdentifier>
+      <Extensions>ui</Extensions>
+    </Filter>
+    <Filter Include="Translation Files">
+      <UniqueIdentifier>{639EADAA-A684-42e4-A9AD-28FC9BCB8F7C}</UniqueIdentifier>
+      <Extensions>ts</Extensions>
+    </Filter>
+    <Filter Include="Header Files\project_head">
+      <UniqueIdentifier>{be3189f9-4523-4b3b-b155-13994b02c653}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\project_cc">
+      <UniqueIdentifier>{90cdb784-916a-4583-90d9-2eb3f8a65a71}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <QtRcc Include="voplatform.qrc">
+      <Filter>Resource Files</Filter>
+    </QtRcc>
+    <QtUic Include="voplatform.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtMoc Include="voplatform.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <ClCompile Include="voplatform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <None Include="VOPlatForm.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <ResourceCompile Include="VOPlatForm.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="comm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Calibration_pro.cpp">
+      <Filter>Source Files\project_cc</Filter>
+    </ClCompile>
+    <ClCompile Include="Matching_pro.cpp">
+      <Filter>Source Files\project_cc</Filter>
+    </ClCompile>
+    <ClCompile Include="VO_pro.cpp">
+      <Filter>Source Files\project_cc</Filter>
+    </ClCompile>
+    <ClCompile Include="projects.cpp">
+      <Filter>Source Files\project_cc</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Calibration_pro.h">
+      <Filter>Header Files\project_head</Filter>
+    </ClInclude>
+    <ClInclude Include="comm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Matching_pro.h">
+      <Filter>Header Files\project_head</Filter>
+    </ClInclude>
+    <ClInclude Include="VO_pro.h">
+      <Filter>Header Files\project_head</Filter>
+    </ClInclude>
+    <ClInclude Include="projects.h">
+      <Filter>Header Files\project_head</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

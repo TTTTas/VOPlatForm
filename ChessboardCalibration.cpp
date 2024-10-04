@@ -1,19 +1,41 @@
 ﻿#include "ChessboardCalibration.h"
+#include "qstring.h"
+#include "qfileinfo.h"
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <filesystem>
+#include <fstream>
 
 using namespace cv;
 using namespace std;
 
-// 定义静态成员变量——以下常量需要改为输入类的参数
-const int ChessboardCalibration::board_width = 5;
-const int ChessboardCalibration::board_height = 8;
-const float ChessboardCalibration::square_size = 27.0f;
-const double ChessboardCalibration::scale_factor = 0.25f;
-const string ChessboardCalibration::folderPath = "./ChessboardPicture";
+// 初始化静态成员变量
+int ChessboardCalibration::board_width = 5;
+int ChessboardCalibration::board_height = 8;
+float ChessboardCalibration::square_size = 27.0f;
+double ChessboardCalibration::scale_factor = 0.25;
+std::string ChessboardCalibration::folderPath = "";
+cv::Size ChessboardCalibration::board_size(board_width, board_height);
+std::string ChessboardCalibration::outPath = "";
+std::string ChessboardCalibration::resultPath = "";
+LogBrowser* ChessboardCalibration::loger = nullptr;
 
-Size ChessboardCalibration::board_size(board_width, board_height);
+void ChessboardCalibration::init_Calibration(int bw, int bh, float ss, double sf, const std::string& fp, const std::string& op, const std::string& rp)
+{
+    board_width = bw;
+    board_height = bh;
+    square_size = ss;
+    scale_factor = sf;
+    folderPath = fp;
+    outPath = op;
+    resultPath = rp;
+    board_size = cv::Size(board_width, board_height);
+}
+
+void ChessboardCalibration::set_loger(LogBrowser* log)
+{
+    loger = log;
+}
 
 // 生成棋盘格的世界坐标
 vector<Point3f> ChessboardCalibration::createKnownBoardPosition(Size boardSize, float squareEdgeLength) {
@@ -59,8 +81,8 @@ Mat ChessboardCalibration::preprocessImage(const Mat& image) {
 // 绘制角点和序号
 void ChessboardCalibration::drawCornersWithIndex(Mat& image, const vector<Point2f>& imagePoints) {
     for (size_t i = 0; i < imagePoints.size(); i++) {
-        circle(image, imagePoints[i], 5, Scalar(0, 0, 255), 2);
-        putText(image, to_string(i), imagePoints[i] + Point2f(5, 5), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 0, 0), 1);
+        circle(image, imagePoints[i], 5, Scalar(139, 34, 34), 4);
+        putText(image, to_string(i), imagePoints[i] + Point2f(5, 5), FONT_HERSHEY_SIMPLEX, 3, Scalar(144, 30, 255), 3);
     }
 }
 
@@ -79,7 +101,7 @@ bool ChessboardCalibration::findChessboardCornersFromImage(Mat& image, vector<Po
     if (found) {
         cornerSubPix(gray, imagePoints, Size(11, 11), Size(-1, -1), TermCriteria(TermCriteria::EPS + TermCriteria::COUNT, 30, 0.001));
         drawCornersWithIndex(image, imagePoints);
-        cout << "找到的角点数量: " << imagePoints.size() << endl;
+        *loger << "找到的角点数量: " << (int)imagePoints.size() << "\n";
     }
 
     return found;
@@ -87,55 +109,58 @@ bool ChessboardCalibration::findChessboardCornersFromImage(Mat& image, vector<Po
 
 // 执行相机标定并显示结果
 void ChessboardCalibration::calibrateAndShowResults(cv::Mat& image, const vector<vector<Point3f>>& worldPoints, const vector<vector<Point2f>>& imagePoints) {
+    ofstream output;
+    output.open(resultPath, ios::out | ios::trunc);
     if (imagePoints.size() > 0) {
         Mat cameraMatrix, distCoeffs;
         vector<Mat> rvecs, tvecs;
         calibrateCamera(worldPoints, imagePoints, cv::Size(image.rows, image.cols), cameraMatrix, distCoeffs, rvecs, tvecs);
 
-        cout << "Camera Matrix: " << cameraMatrix << endl;
-        cout << "Distortion Coefficients: " << distCoeffs << endl;
+        *loger << "Camera Matrix: \n" << cameraMatrix << "\n";
+        output << "Camera Matrix: \n" << cameraMatrix << "\n";
+        *loger << "Distortion Coefficients: \n" << distCoeffs << "\n";
+        output<< "Distortion Coefficients: \n" << distCoeffs << "\n";
     }
     else {
-        cout << "未找到足够的角点进行标定！" << endl;
+        *loger << "未找到足够的角点进行标定！\n";
+        output << "未找到足够的角点进行标定！\n";
     }
+    output.close();
 }
 
 // 相机标定-主程序封装函数
-void ChessboardCalibration::runCalibration() {
+void ChessboardCalibration::runCalibration(CalibrationWorker* worker) {
     using namespace std;
     using namespace cv;
-    namespace fs = std::filesystem;  // 方便使用别名
+    namespace fs = std::filesystem;
 
     vector<vector<Point3f>> worldPoints;
     vector<vector<Point2f>> imagePoints;
     vector<Point2f> imageCorners;
     vector<Point3f> worldCorners = createKnownBoardPosition(board_size, square_size);
 
-    // 检查路径是否存在
-    if (!std::filesystem::exists(folderPath)) {
-        std::cout << "指定的文件夹不存在: " << folderPath << std::endl;
+    if (!fs::exists(folderPath)) {
+        *loger << "指定的文件夹不存在: " << folderPath;
         return;
     }
 
-    // 遍历指定文件夹内的所有 jpg 文件
+    int processedImages = 0;
+
     Mat image;
     for (const auto& entry : fs::directory_iterator(folderPath)) {
-        // 只处理 .jpg 文件
-        if (entry.path().extension() == ".JPG"|| entry.path().extension() == ".jpg"
+        if (entry.path().extension() == ".JPG" || entry.path().extension() == ".jpg"
             || entry.path().extension() == ".JPEG" || entry.path().extension() == ".jpeg"
-            || entry.path().extension() == ".png" || entry.path().extension() == ".PNG")
-        {
+            || entry.path().extension() == ".png" || entry.path().extension() == ".PNG") {
             string filename = entry.path().string();
             image = imread(filename);
 
             if (image.empty()) {
-                cout << "无法读取图片: " << filename << endl;
+                *loger << "无法读取图片: " << filename << "\n";
                 continue;
             }
 
-            //不缩小分辨率重置大小
-            //Mat resized_image = resizeImage(image, scale_factor);
-            //Mat preprocessed_image = preprocessImage(resized_image);
+            QFileInfo fileinfo(QString::fromStdString(filename));
+            *loger << "开始处理图片 " << fileinfo.fileName() << "\n";
 
             Mat preprocessed_image = preprocessImage(image);
 
@@ -144,13 +169,22 @@ void ChessboardCalibration::runCalibration() {
                 worldPoints.push_back(worldCorners);
             }
 
-            imshow("Preprocessed Chessboard Corners with Index", preprocessed_image);
-            waitKey(500);
+            QStringList file_names = fileinfo.fileName().split(".");
+            imwrite(outPath + "/" + file_names[0].toStdString() + "_processed.jpg", preprocessed_image);
+
+            // 发射进度更新信号
+            ++processedImages;
+            emit worker->updateProgress(processedImages);
+
+            if (worker->canceled) {
+                *loger << "操作被用户取消.\n";
+                break;
+            }
+
+            //waitKey(500);
         }
     }
 
-    destroyAllWindows();
-
-    // 调用标定函数
+    *loger << "图片处理完成.\n";
     calibrateAndShowResults(image, worldPoints, imagePoints);
 }

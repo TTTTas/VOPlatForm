@@ -15,6 +15,8 @@
 #include "Matching_pro.h"
 #include "VO_pro.h"
 #include "NewProjectDialog.h"
+#include "logbrowser.h"
+#include "CalibrationSettingsDialog.h"
 
 // TODO
 // 1. 项目创建函数未编写
@@ -40,8 +42,11 @@ private:
     // 创建项目类别
     QString workspace;                  // 工作空间
     QList<Calibration_pro*> calibrationFiles_;
+    Calibration_pro* currentCalibrationPro;
     QList<Matching_pro*> matchingFiles_;
+    Matching_pro* currentMatchingPro;
     QList<VO_pro*> voFiles_;
+    VO_pro* currentVOPro;
 
 
     QStandardItem* calibrationItem;
@@ -50,6 +55,7 @@ private:
 
     void Init_connect_slots();
     void Init_pro_tree();
+    void Update_pro_tree(Project_Base& pro);
 
 private slots:
     // 图片框展示函数
@@ -63,4 +69,8 @@ private slots:
     void onOpenPro();
     void onSavePro();
     void onLoadProjects();
+
+    // 相机标定项目函数
+    void onImageItemClicked(const QModelIndex& index);
+    void onCalibrationRun();
 };

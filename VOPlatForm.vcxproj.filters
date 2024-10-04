@@ -67,22 +67,57 @@
     <ClCompile Include="projects.cpp">
       <Filter>Source Files\project_cc</Filter>
     </ClCompile>
+    <ClCompile Include="camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ChessboardCalibration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EpipolarGeometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NewProjectDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CalibrationWorker.cpp">
+      <Filter>Source Files\project_cc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Calibration_pro.h">
-      <Filter>Header Files\project_head</Filter>
-    </ClInclude>
-    <ClInclude Include="comm.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Matching_pro.h">
       <Filter>Header Files\project_head</Filter>
     </ClInclude>
     <ClInclude Include="VO_pro.h">
       <Filter>Header Files\project_head</Filter>
     </ClInclude>
-    <ClInclude Include="projects.h">
+    <ClInclude Include="camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ChessboardCalibration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EpipolarGeometry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Base.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Calibration_pro.h">
       <Filter>Header Files\project_head</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="CalibrationSettingsDialog.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="logbrowser.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="NewProjectDialog.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="CalibrationWorker.h">
+      <Filter>Header Files\project_head</Filter>
+    </QtMoc>
   </ItemGroup>
 </Project>

@@ -1,8 +1,13 @@
 #include "voplatform.h"
+#include "ChessboardCalibration.h"
+#include "qprogressdialog.h"
 #include <qimage.h>
 #include <QFileDialog>
 #include <QDirIterator>
 #include <QDir>
+#include <qthread.h>
+#include <QPointer>
+#include <memory>
 
 #pragma execution_character_set("utf-8")
 
@@ -20,6 +25,12 @@ VOPlatForm::VOPlatForm(QWidget *parent)
     resizeTimer->setSingleShot(true);
     Init_connect_slots();
     Init_pro_tree();
+    currentCalibrationPro = new Calibration_pro("");
+    currentMatchingPro = new Matching_pro("");
+    currentVOPro = new VO_pro("");
+
+    *ui.Log_Info_Browser << "welcome\n";
+    ChessboardCalibration::set_loger(ui.Log_Info_Browser);
 }
 
 VOPlatForm::~VOPlatForm()
@@ -36,6 +47,7 @@ void VOPlatForm::Init_connect_slots()
     connect(resizeTimer, &QTimer::timeout, this, &VOPlatForm::onResizeTimeout);
 
     // 项目信号槽
+    connect(ui.pro_treeView, &QTreeView::clicked, this, &VOPlatForm::onImageItemClicked);
 
     // 新建项目
     connect(ui.action_new_pro, &QAction::triggered, this, &VOPlatForm::onCreateNewPro);
@@ -51,6 +63,10 @@ void VOPlatForm::Init_connect_slots()
 
     // 打开工作目录
     connect(ui.select_pro_btn, &QToolButton::clicked, this, &VOPlatForm::onLoadProjects);
+
+    // 标定项目
+    connect(ui.camera_action, &QAction::triggered, this, &VOPlatForm::onCalibrationRun);
+    connect(ui.actioncalibration, &QAction::triggered, this, &VOPlatForm::onCalibrationRun);
 }
 
 void VOPlatForm::Init_pro_tree()
@@ -72,6 +88,56 @@ void VOPlatForm::Init_pro_tree()
     ui.pro_treeView->setModel(pro_tree);
     ui.pro_treeView->expandAll();
 
+}
+
+void VOPlatForm::Update_pro_tree(Project_Base& pro)
+{
+    switch (pro.getPro_Type()) {
+    case 1:
+    {
+        // 创建新的 Calibration_pro 项目并添加到 calibrationFiles_
+        Calibration_pro* newCalibration = new Calibration_pro(pro.getPro_Path());
+        calibrationFiles_.append(newCalibration);
+        currentCalibrationPro = newCalibration;
+
+        // 为 calibrationItem 添加项目名称
+        QStandardItem* newItem = new QStandardItem(pro.getPro_Name());
+        calibrationItem->appendRow(newItem);
+
+        // 获取新项目文件夹中的图片文件
+        QStringList images = newCalibration->getImages();
+        foreach(const QString & imageName, images) {
+            QString fullPath = currentCalibrationPro->inputfolder + "/" + imageName;
+            // 将图片文件添加到 calibrationItem 的子项
+            QStandardItem* imageItem = new QStandardItem(imageName);
+            imageItem->setData(fullPath, Qt::UserRole);  // 将完整路径存储为子项的用户角色数据
+            newItem->appendRow(imageItem);
+        }
+        images = newCalibration->getOutImages();
+        foreach(const QString& imageName, images) {
+            QString fullPath = currentCalibrationPro->outputfolder + "/" + imageName;
+            // 将图片文件添加到 calibrationItem 的子项
+            QStandardItem* imageItem = new QStandardItem(imageName);
+            imageItem->setData(fullPath, Qt::UserRole);  // 将完整路径存储为子项的用户角色数据
+            newItem->appendRow(imageItem);
+        }
+        break;
+    }
+    case 2:
+    {
+        matchingFiles_.append(new Matching_pro(pro.getPro_Path()));
+        matchingItem->appendRow(new QStandardItem(pro.getPro_Name()));
+        break;
+    }
+    case 3:
+    {
+        voFiles_.append(new VO_pro(pro.getPro_Path()));
+        voItem->appendRow(new QStandardItem(pro.getPro_Name()));
+        break;
+    }
+    default:
+        break;
+    }
 }
 
 void VOPlatForm::onLoadPicture()
@@ -146,31 +212,19 @@ void VOPlatForm::onOpenPro()
         nullptr,                         // 父窗口
         QString::fromLocal8Bit("选择文件"),                      // 对话框标题
         "",                              // 默认路径
-        QString::fromLocal8Bit("所有文件 (*.*);;文本文件 (*.txt)")  // 过滤器
+        QString::fromLocal8Bit("所有文件 (*.*);;文本文件 (*.vopro)")  // 过滤器
     );
 
     // 检查是否选择了文件
     if (!filePaths.isEmpty()) {
+        QFileInfo folderinfo(filePaths[0]);
+        ui.pro_label->setText(folderinfo.absolutePath());
         // 遍历选择的文件
         foreach(const QString & filePath, filePaths) 
         {
             Project_Base pro(filePath);
-            switch (pro.getPro_Type()) {
-            case 1:
-                calibrationFiles_.append(new Calibration_pro(filePath));
-                calibrationItem->appendRow(new QStandardItem(pro.getPro_Name()));
-                break;
-            case 2:
-                matchingFiles_.append(new Matching_pro(filePath));
-                matchingItem->appendRow(new QStandardItem(pro.getPro_Name()));
-                break;
-            case 3:
-                voFiles_.append(new VO_pro(filePath));
-                voItem->appendRow(new QStandardItem(pro.getPro_Name()));
-                break;
-            default:
-                break;
-            }
+            
+            Update_pro_tree(pro);
         }
     }
     else {
@@ -196,11 +250,11 @@ void VOPlatForm::onLoadProjects()
 
     // 清除之前的项目
     calibrationFiles_.clear();
-    calibrationItem->clearData();
+    calibrationItem->removeRows(0, calibrationItem->rowCount());
     matchingFiles_.clear();
-    matchingItem->clearData();
+    matchingItem->removeRows(0, matchingItem->rowCount());
     voFiles_.clear();
-    voItem->clearData();
+    voItem->removeRows(0, voItem->rowCount());
 
     // 递归搜索 .pro 文件
     QDir dir(workspace);
@@ -209,23 +263,107 @@ void VOPlatForm::onLoadProjects()
     while (it.hasNext()) {
         QString filePath = it.next();
         Project_Base pro(filePath);
-        switch (pro.getPro_Type()) {
-        case 1:
-            calibrationFiles_.append(new Calibration_pro(filePath));
-            calibrationItem->appendRow(new QStandardItem(pro.getPro_Name()));
-            break;
-        case 2:
-            matchingFiles_.append(new Matching_pro(filePath));
-            matchingItem->appendRow(new QStandardItem(pro.getPro_Name()));
-            break;
-        case 3:
-            voFiles_.append(new VO_pro(filePath));
-            voItem->appendRow(new QStandardItem(pro.getPro_Name()));
-            break;
-        default:
-            break;
+
+        Update_pro_tree(pro);
+    }
+}
+
+void VOPlatForm::onImageItemClicked(const QModelIndex& index)
+{
+    // 确保索引有效
+    if (!index.isValid()) return;
+
+    // 获取模型
+    QStandardItemModel* model = qobject_cast<QStandardItemModel*>(ui.pro_treeView->model());
+    if (!model) return; // 确保模型有效
+
+    // 获取 QStandardItem
+    QStandardItem* item = model->itemFromIndex(index);
+    if (!item) return; // 确保获取到有效的项
+
+    // 判断该项是否是 calibrationItem 的子项的子项
+    if (item->parent() && item->parent()->parent() == calibrationItem) {
+        // 该项是 calibrationItem 的子项的子项，获取对应的完整路径
+        QString imagePath = index.data(Qt::UserRole).toString();  // 获取点击子项的文本信息（即图片文件名）
+
+        // 加载图片
+        QPixmap pixmap(imagePath);
+
+        // 检查图片是否加载成功
+        if (pixmap.isNull()) {
+            QMessageBox::warning(this, tr("Load Image"), tr("The image file could not be loaded."));
+            return;
         }
 
+        // 将图片设置到 Pic_show_label 中
+        originalPixmap = pixmap;  // 缓存原始图片
+        updateLabelPixmap();      // 调整图片大小并显示
+    }
+}
+
+void VOPlatForm::onCalibrationRun()
+{
+    CalibrationSettingsDialog dialog;
+    if (dialog.exec() == QDialog::Accepted) {
+        QString inputFolder = dialog.getInputFolderPath();
+        QString outputFolder = dialog.getOutputFolderPath();
+        QString resultFile = dialog.getResultFilePath();
+        int bw = dialog.getBoardWidth();
+        int bh = dialog.getBoardHeight();
+        float ss = dialog.getSquareSize();
+        double sf = dialog.getScaleFactor();
+
+        // 将获取的参数传入标定项目
+        ChessboardCalibration::init_Calibration(bw, bh, ss, sf, inputFolder.toStdString(),outputFolder.toStdString(),resultFile.toStdString());
+
+        int totalImages = 0;
+
+        for (const auto& entry : std::filesystem::directory_iterator(inputFolder.toStdString())) {
+            if (entry.path().extension() == ".JPG" || entry.path().extension() == ".jpg"
+                || entry.path().extension() == ".JPEG" || entry.path().extension() == ".jpeg"
+                || entry.path().extension() == ".png" || entry.path().extension() == ".PNG") {
+                ++totalImages;
+            }
+        }
+
+        QProgressDialog* progressDialog = new QProgressDialog(QString::fromLocal8Bit("正在进行标定..."), QString::fromLocal8Bit("取消"), 0, totalImages, this);
+        progressDialog->setWindowModality(Qt::WindowModal);
+        progressDialog->setValue(0);
+        progressDialog->show();
+
+        // 创建并启动工作线程
+        QPointer<QThread> thread = new QThread();
+        std::shared_ptr<CalibrationWorker> worker = std::make_shared<CalibrationWorker>();
+
+        worker->moveToThread(thread);
+
+        // 连接信号与槽
+        connect(worker.get(), &CalibrationWorker::finished, thread, &QThread::quit);
+        connect(worker.get(), &CalibrationWorker::finished, worker.get(), &CalibrationWorker::deleteLater);
+        connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+
+        // 启动线程
+        connect(thread, &QThread::started, worker.get(), &CalibrationWorker::process);
+        thread->start();
+
+        // 清除之前的项目
+        calibrationFiles_.clear();
+        calibrationItem->removeRows(0, calibrationItem->rowCount());
+        matchingFiles_.clear();
+        matchingItem->removeRows(0, matchingItem->rowCount());
+        voFiles_.clear();
+        voItem->removeRows(0, voItem->rowCount());
+
+        // 递归搜索 .pro 文件
+        QDir dir(workspace);
+        QDirIterator it(dir.absolutePath(), QStringList() << "*.vopro", QDir::Files | QDir::NoSymLinks, QDirIterator::Subdirectories);
+
+        while (it.hasNext()) {
+            QString filePath = it.next();
+            Project_Base pro(filePath);
+
+            Update_pro_tree(pro);
+        }
     }
 }
 

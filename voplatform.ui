@@ -60,7 +60,7 @@
           <set>Qt::AlignmentFlag::AlignCenter</set>
          </property>
         </widget>
-        <widget class="QTextBrowser" name="Log_Info_Browser"/>
+        <widget class="LogBrowser" name="Log_Info_Browser"/>
        </widget>
       </item>
      </layout>
@@ -458,6 +458,13 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>LogBrowser</class>
+   <extends>QTextBrowser</extends>
+   <header>logbrowser.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="voplatform.qrc"/>
  </resources>

@@ -22,8 +22,8 @@ Project_Base::Project_Base(QString path) : file_(path)
     Pro_Type = -1;
     if (!textStream_.atEnd())
     {
-        Pro_Name = textStream_.readLine();
-        Pro_Type = textStream_.readLine().toInt();
+        Pro_Name = next();
+        Pro_Type = next().toInt();
     }
 }
 
@@ -40,7 +40,7 @@ Project_Base::Project_Base(QString path, QString Pro_type, QString Pro_name) : f
 
 QString Project_Base::next()
 {
-    if (file_.atEnd())
+    if (textStream_.atEnd())
     {
         return QString();
     }

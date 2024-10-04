@@ -69,6 +69,10 @@
     <Link>
       <AdditionalDependencies>Qt6DataVisualizationd.lib;opencv_world490d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <ClCompile>
+      <AdditionalOptions>/Zm200
+ %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
     <ClCompile>
@@ -99,14 +103,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <QtMoc Include="CalibrationSettingsDialog.h" />
+    <ClCompile Include="CalibrationWorker.cpp" />
+    <ClCompile Include="camera.cpp" />
     <ClCompile Include="ChessboardCalibration.cpp" />
+    <ClCompile Include="EpipolarGeometry.cpp" />
+    <ClCompile Include="NewProjectDialog.cpp" />
     <ClCompile Include="projects.cpp" />
     <ClCompile Include="VO_pro.cpp" />
     <QtRcc Include="voplatform.qrc" />
     <QtUic Include="voplatform.ui" />
     <QtMoc Include="voplatform.h" />
     <ClCompile Include="Calibration_pro.cpp" />
-    <ClCompile Include="comm.cpp" />
     <ClCompile Include="Matching_pro.cpp" />
     <ClCompile Include="voplatform.cpp" />
     <ClCompile Include="main.cpp" />
@@ -115,10 +123,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Calibration_pro.h" />
+    <QtMoc Include="CalibrationWorker.h" />
+    <ClInclude Include="camera.h" />
     <ClInclude Include="ChessboardCalibration.h" />
-    <ClInclude Include="comm.h" />
+    <ClInclude Include="EpipolarGeometry.h" />
+    <QtMoc Include="logbrowser.h" />
     <ClInclude Include="Matching_pro.h" />
-    <ClInclude Include="projects.h" />
+    <QtMoc Include="NewProjectDialog.h" />
+    <ClInclude Include="Project_Base.h" />
     <ClInclude Include="VO_pro.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

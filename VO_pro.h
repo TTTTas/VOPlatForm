@@ -20,6 +20,10 @@ public:
     // 读取VO项目的下一行信息
     QString nextVOLine();
 
+    void update();
+
+    void save();
+
 private:
     // 可以添加特定于VO项目的成员变量或方法
 };

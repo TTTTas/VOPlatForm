@@ -63,6 +63,7 @@ public:
     void setProName(const QString& name) { Pro_Name = name; }
     void setProPath(const QString& path) { Pro_Path = path; }
     void setProType(int type) { Pro_Type = type; }
+    std::string convertToRelative(const std::string& basePath, const std::string& absolutePath);
 
     void out_head_info();
     bool open_file(QString path);

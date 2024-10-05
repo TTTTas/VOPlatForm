@@ -15,3 +15,11 @@ QString VO_pro::nextVOLine()
 {
     return next();  // 调用基类中的 next() 方法
 }
+
+void VO_pro::update()
+{
+}
+
+void VO_pro::save()
+{
+}

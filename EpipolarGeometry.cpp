@@ -1,4 +1,6 @@
 #include "EpipolarGeometry.h"
+#include "comm_funcs.h"
+#include "fstream"
 #include <iostream>
 #include <tuple>
 #include <unordered_map>
@@ -7,16 +9,21 @@
 #include <sstream>  // 用于格式化字符串
 #include <vector>   // 用于存储文件名
 #include <fstream>
+#include "qfileinfo.h"
 
 namespace fs = std::filesystem;
 
 fstream f;
 
 // 初始化路径
-const string EpipolarGeometry::filename1 = "./Input/key_1.jpg";
-const string EpipolarGeometry::filename2 = "./Input/key_2.jpg";
-const string EpipolarGeometry::filename3 = "./Input/key_3.jpg";
-const string EpipolarGeometry::folder = "./data";
+string EpipolarGeometry::filename1 = "";
+string EpipolarGeometry::filename2 = "";
+string EpipolarGeometry::filename3 = "";
+string EpipolarGeometry::inputfolder = "";
+string EpipolarGeometry::outputfolder = "";
+string EpipolarGeometry::resultpath = "";
+EpipolarGeometryWorker* EpipolarGeometry::worker = nullptr;
+
 //const string EpipolarGeometry::filename4 = "./data/0000000002.png";
 Mat EpipolarGeometry::img1, EpipolarGeometry::img2, EpipolarGeometry::img3;
 
@@ -43,23 +50,24 @@ double EpipolarGeometry::focal_length = K.at<double>(0, 0);
 using namespace cv;
 using namespace std;
 
-int EpipolarGeometry::initialize() 
+void EpipolarGeometry::Init(string input, string output, string result)
 {
-    // 读取图像
-    img1 = imread(filename1);
-    img2 = imread(filename2);
-    //img3 = imread(filename3);
+    inputfolder = input;
+    outputfolder = output;
+    resultpath = result;
+}
 
-    //img1 = readNextPNG(folder);
-    //img2 = readNextPNG(folder);
-    //img3 = readNextPNG(folder);
-
-    // 降低画质到1080P
-
+int EpipolarGeometry::initialize()
+{
+    img1 = readNextImg(inputfolder);
+    filename1 = filename3;
+    img2 = readNextImg(inputfolder);
+    filename2 = filename3;
+    img3 = readNextImg(inputfolder);
 
     // 确保图像被正确读取
     if (img1.empty() || img2.empty() ) {
-        cout << "未找到影像!" << endl;
+        emit worker->logMessage("未找到影像!\n");
         return -1;
     }
 
@@ -127,8 +135,8 @@ vector<DMatch> EpipolarGeometry::filterGoodMatches(const vector<DMatch>& matches
     double min_dist = min_max.first->distance;
     double max_dist = min_max.second->distance;
 
-    printf("-- Max dist : %f \n", max_dist);
-    printf("-- Min dist : %f \n", min_dist);
+    emit worker->logMessage("-- Max dist : \n" + QString::number(max_dist));
+    emit worker->logMessage("-- Min dist :\n" + QString::number(min_dist));
 
     vector<DMatch> good_matches;
     // 筛选好的匹配点，距离小于2倍的最小距离或30的经验值
@@ -188,14 +196,18 @@ void EpipolarGeometry::drawAndShowMatches(Mat img1, Mat img2,vector<KeyPoint>& k
 
     //imshow("All matches", img_match);
     //imshow("Good matches", img_goodmatch);
-
-    imwrite("Good matches.JPG", img_goodmatch);
+    emit worker->showimg(img_goodmatch);
+    QString filename= QString::fromStdString(filename1).split(".")[0] + "_" + QString::fromStdString(filename2).split(".")[0];
+    imwrite(outputfolder + "/" + filename.toStdString() + "_processed.jpg", img_goodmatch);
     //waitKey(0);
 }
 
 // 2D-2D对极
 void EpipolarGeometry::pose_estimation_2d2d(vector<KeyPoint>& keypoints1, vector<KeyPoint>& keypoints2,std::vector<DMatch> matches)
 {
+    ofstream out;
+    out.open(resultpath, ios::app | ios::out);
+    
     // 把匹配点转换为vector<Point2f>的形式
     vector<Point2f> points1, points2;
 
@@ -206,18 +218,28 @@ void EpipolarGeometry::pose_estimation_2d2d(vector<KeyPoint>& keypoints1, vector
 
     // 计算基础矩阵
     F = findFundamentalMat(points1, points2, FM_RANSAC);
-    cout << "fundamental_matrix is " << endl << F << endl;
+    QString message;
+    message = "F Matrix \n" + QString::fromStdString(Mat2string(F)) + "\n";
+    emit worker->logMessage(message);
+    out << "F Matrix \n" << F << endl;
 
-    // 计算本质矩阵
+    // 计算本质 Matrix
     E = findEssentialMat(points1, points2, focal_length, principal_point);
-    cout << "essential_matrix is " << endl << E << endl;
+    message = QString::fromStdString("E Matrix \n") + QString::fromStdString(Mat2string(E)) + "\n";
+    emit worker->logMessage(message);
+    out << "E Matrix \n" << endl << E << endl;
 
-    // 从本质矩阵中恢复旋转和平移信息.
+    // 从本质 Matrix中恢复旋转和平移信息.
     recoverPose(E, points1, points2, R, t, focal_length, principal_point);
 
-    cout << "R is " << endl << R << endl;
-    cout << "t is " << endl << t << endl;
+    message = QString::fromStdString("R Matrix \n") + QString::fromStdString(Mat2string(R)) + "\n";
+    emit worker->logMessage(message);
+    out << "R Matrix \n" << endl << R << endl;
+    message = QString::fromStdString("t Matrix \n") + QString::fromStdString(Mat2string(t)) + "\n";
+    emit worker->logMessage(message);
+    out << "t Matrix \n" << endl << t << endl;
 
+    out.close();
     f << t.at<double>(0, 0) << " " << t.at<double>(1, 0) << " " << t.at<double>(2, 0) << endl;
 
 }
@@ -238,7 +260,7 @@ void EpipolarGeometry::verify(vector<KeyPoint>& keypoints1, vector<KeyPoint>& ke
         t.at<double>(2, 0), 0, -t.at<double>(0, 0),
         -t.at<double>(1, 0), t.at<double>(0, 0), 0);
 
-    cout << "t^R=" << endl << t_x * R << endl;
+    emit worker->logMessage("t^R= \n" + QString::fromStdString(Mat2string(t_x * R)) + "\n");
 
     for (DMatch m : matches) 
     {
@@ -250,7 +272,7 @@ void EpipolarGeometry::verify(vector<KeyPoint>& keypoints1, vector<KeyPoint>& ke
 
         Mat d = y2.t() * t_x * R * y1;
 
-        //cout << "epipolar constraint = " << d << endl;
+        emit worker->logMessage("epipolar constraint = " + QString::fromStdString(Mat2string(d)) + "\n");
     }
 }
 
@@ -316,17 +338,18 @@ void EpipolarGeometry::verifyReprojection(std::vector<DMatch> matches, std::vect
 
         Point2d pt1_cam_3d( points[i].x / points[i].z, points[i].y / points[i].z );
 
-        cout << "point in the first camera frame: " << pt1_cam << endl;
-        cout << "point projected from 3D " << pt1_cam_3d << ", d=" << points[i].z << endl;
+        emit worker->logMessage("point in the first camera frame: " + QString::fromStdString(Point2d2string(pt1_cam)) +"\n");
+        emit worker->logMessage("point projected from 3D: " + QString::fromStdString(Point2d2string(pt1_cam_3d)) + ", d=" + QString::number(points[i].z) + "\n");
 
         // 第2幅图
         Point2f pt2_cam = pixel2cam(keypoints2[matches[i].trainIdx].pt, K);
         Mat pt2_trans = R * (Mat_<double>(3, 1) << points[i].x, points[i].y, points[i].z) + t;
         pt2_trans /= pt2_trans.at<double>(2, 0);
 
-        cout << "point in the second camera frame: " << pt2_cam << endl;
-        cout << "point reprojected from second frame: " << pt2_trans.t() << endl;
-        cout << endl;
+        emit worker->logMessage("point in the second camera frame: " + QString::fromStdString(Point2d2string(pt2_cam)) + "\n");
+        emit worker->logMessage("point reprojected from second frame: " + QString::fromStdString(Mat2string(pt2_trans.t()))+"\n");
+        
+        emit worker->logMessage("\n");
     }
 
 
@@ -334,7 +357,7 @@ void EpipolarGeometry::verifyReprojection(std::vector<DMatch> matches, std::vect
     for (int i = 0; i < matches.size(); i++) {
         // 第一个图
         float depth1 = points[i].z;
-        cout << "depth: " << depth1 << endl;
+        emit worker->logMessage("depth: " + QString::number(depth1) + "\n");
         Point2d pt1_cam = pixel2cam(keypoints1[matches[i].queryIdx].pt, K);
         cv::circle(img1_plot, keypoints1[matches[i].queryIdx].pt, 2, get_color(depth1), 2);
 
@@ -343,6 +366,11 @@ void EpipolarGeometry::verifyReprojection(std::vector<DMatch> matches, std::vect
         float depth2 = pt2_trans.at<double>(2, 0);
         cv::circle(img2_plot, keypoints2[matches[i].trainIdx].pt, 2, get_color(depth2), 2);
     }
+    emit worker->logMessage(QString::fromLocal8Bit("重投影验证："));
+    emit worker->logMessage("IMG1:  " + QString::fromStdString(filename1));
+    emit worker->showimg(img1_plot);
+    emit worker->logMessage("IMG2:  " + QString::fromStdString(filename2));
+    emit worker->showimg(img2_plot);
     //cv::imshow("img 1", img1_plot);
     //cv::imshow("img 2", img2_plot);
     //cv::waitKey(500);
@@ -365,13 +393,13 @@ void EpipolarGeometry::pose_estimation_2d3d(const vector<Point2d>& imagePoints, 
     Rodrigues(rvec, R);
 
     if (success) {
-        cout << "旋转向量 (rvec): " << endl << rvec << endl;
-        cout << "平移向量 (tvec): " << endl << tvec << endl;
+        emit worker->logMessage("旋转向量 (rvec): " + QString::fromStdString(Mat2string(rvec)) + "\n");
+        emit worker->logMessage("平移向量 (tvec): " + QString::fromStdString(Mat2string(tvec)) + "\n");
+        emit worker->logMessage("旋转矩阵向量: " + QString::fromStdString(Mat2string(R)) + "\n");
 
-        cout << "旋转矩阵向量 : " << endl << R << endl;
     }
     else {
-        cerr << "PnP 估计失败！" << endl;
+        emit worker->logMessage("PnP 估计失败！\n");
     }
 }
 
@@ -527,38 +555,47 @@ void draw3ImagePointsLine(cv::Mat& img1, cv::Mat& img2, cv::Mat& img3,
 }
 
 // 读取文件夹中的PNG图片，按次序返回一张图片
-Mat EpipolarGeometry::readNextPNG(const std::string& folderPath) {
+Mat EpipolarGeometry::readNextImg(const std::string& folderPath) {
     // 静态变量，用于保存当前索引和文件列表
-    static std::vector<std::string> pngFiles;
+    static std::vector<std::string> imageFiles;
     static size_t currentIndex = 0;
 
-    // 初始化时读取文件夹中的PNG文件
-    if (pngFiles.empty()) {
+    // 初始化时读取文件夹中的图片文件
+    if (imageFiles.empty()) {
         for (const auto& entry : fs::directory_iterator(folderPath)) {
-            if (entry.path().extension() == ".png") {
-                pngFiles.push_back(entry.path().string());
+            // 获取文件扩展名
+            std::string ext = entry.path().extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);  // 将扩展名转为小写
+
+            // 判断是否为常见的图片格式
+            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp") {
+                imageFiles.push_back(entry.path().string());
             }
         }
 
-        // 如果文件夹中没有PNG文件，返回空矩阵
-        if (pngFiles.empty()) {
-            std::cerr << "No PNG files found in the folder." << std::endl;
+        // 如果文件夹中没有图片文件，返回空矩阵
+        if (imageFiles.empty()) {
+            std::cerr << "No image files found in the folder." << std::endl;
             return cv::Mat();
         }
 
         // 按文件名排序，以确保按照文件名顺序读取
-        std::sort(pngFiles.begin(), pngFiles.end());
+        std::sort(imageFiles.begin(), imageFiles.end());
     }
 
     // 如果所有文件都读取完毕，返回空矩阵
-    if (currentIndex >= pngFiles.size()) {
+    if (currentIndex >= imageFiles.size()) {
         std::cout << "All images have been read." << std::endl;
         return cv::Mat();
     }
 
     // 读取当前索引的图片
-    std::string imagePath = pngFiles[currentIndex];
+    std::string imagePath = imageFiles[currentIndex];
+    QFileInfo imginfo(QString::fromStdString(imagePath));
+    filename3 = imginfo.fileName().toStdString();
     cv::Mat image = cv::imread(imagePath, cv::IMREAD_COLOR);
+    emit worker->logMessage(QString::fromLocal8Bit("读入图片：") + QString::fromStdString(filename3));
+    emit worker->showimg(image);
 
     if (image.empty()) {
         std::cerr << "Failed to load image: " << imagePath << std::endl;
@@ -570,14 +607,18 @@ Mat EpipolarGeometry::readNextPNG(const std::string& folderPath) {
     return image;
 }
 
+
 // 与自己和解，2D-2D视觉里程计函数
-
-
-void EpipolarGeometry::Run()
+void EpipolarGeometry::Run(EpipolarGeometryWorker* w)
 {
+    worker = w;
     // 初始化类，传入图像路径
     if (initialize() == -1)   return;
-
+    ofstream out;
+    out.open(resultpath, ios::out | ios::trunc);
+    emit worker->logMessage(QString::fromLocal8Bit("开始计算: ")+ QString::fromStdString(filename1) + "  ->  " + QString::fromStdString(filename2) + "\n");
+    out << "开始计算: " << filename1 << "  ->  " << filename2 << "\n";
+    out.close();
     // 1. 检测和计算特征点及描述符
     detectAndComputeFeatures(img1, img2, keypoints1, keypoints2, descriptors1, descriptors2);
 
@@ -596,6 +637,8 @@ void EpipolarGeometry::Run()
     // 6. 验证
     verify(keypoints1, keypoints2, good_matches);
 
+    emit worker->updateProgress(1);
+
     // 7. 三角测量
     vector<Point3d> points3D, pointsAll3D, pointsCDIn3D, pointCDIn34;
 
@@ -605,13 +648,37 @@ void EpipolarGeometry::Run()
     // 8. 重投影验证
     verifyReprojection(good_matches, points3D);
 
+    ofstream out_good_point, out_all_point;
+    out_good_point.open(outputfolder + "/points.txt", ios::out | ios::trunc);
+    out_all_point.open(outputfolder + "/All_points.txt", ios::out | ios::trunc);
+
+    out_good_point << filename1 << " -> " << filename2 << "\n";
+    out_good_point << fixed << setprecision(6);
+    out_all_point << fixed << setprecision(6);
+
+    out_good_point << left << setw(12) << "x\t" << setw(12) << "y\t" << setw(12) << "z\n";
+    for (const Point3d point : points3D)
+    {
+        out_good_point << left << setw(12) << point.x << "\t" << setw(12) << point.y << "\t" << setw(12) << point.z << "\n";
+    }
+
+    out_all_point << filename1 << " -> " << filename2 << "\n";
+    out_all_point << fixed << setprecision(6);
+    out_all_point << left << setw(12) << "x\t" << setw(12) << "y\t" << setw(12) << "z\n";
+    for (const Point3d point : pointsAll3D)
+    {
+        out_all_point << left << setw(12) << point.x << "\t" << setw(12) << point.y << "\t" << setw(12) << point.z << "\n";
+    }
+
+    emit worker->updateProgress(2);
+
     //f.open("data.txt", ios::out);
 
     //// 和解版视觉里程计
     //while (true) 
     //{
     //    img1 = img2;
-    //    img2 = readNextPNG(folder);
+    //    img2 = readNextPNG(inputfolder);
     //    if (img2.empty()) {
     //        std::cout << "No more images to read or failed to load image." << std::endl;
     //        break;
@@ -667,7 +734,7 @@ void EpipolarGeometry::Run()
     //{
     //    img1 = img2.clone();
     //    img2 = img3.clone();
-    //    img3 = readNextPNG(folder);
+    //    img3 = readNextPNG(inputfolder);
 
     //    if (img3.empty()) {
     //        std::cout << "No more images to read or failed to load image." << std::endl;
@@ -707,7 +774,7 @@ void EpipolarGeometry::Run()
     //// 初始化，把顺序提前
     ////img1 = img2.clone();
     ////img2 = img3.clone();
-    ////img3 = readNextPNG(folder);
+    ////img3 = readNextPNG(inputfolder);
 
     ////keypoints1 = keypoints2;
     ////keypoints2 = keypoints3;

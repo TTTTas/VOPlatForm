@@ -1,6 +1,7 @@
 ﻿#include "ChessboardCalibration.h"
 #include "qstring.h"
 #include "qfileinfo.h"
+#include "comm_funcs.h"
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <filesystem>
@@ -18,7 +19,7 @@ std::string ChessboardCalibration::folderPath = "";
 cv::Size ChessboardCalibration::board_size(board_width, board_height);
 std::string ChessboardCalibration::outPath = "";
 std::string ChessboardCalibration::resultPath = "";
-LogBrowser* ChessboardCalibration::loger = nullptr;
+CalibrationWorker* ChessboardCalibration::worker = nullptr;
 
 void ChessboardCalibration::init_Calibration(int bw, int bh, float ss, double sf, const std::string& fp, const std::string& op, const std::string& rp)
 {
@@ -30,11 +31,6 @@ void ChessboardCalibration::init_Calibration(int bw, int bh, float ss, double sf
     outPath = op;
     resultPath = rp;
     board_size = cv::Size(board_width, board_height);
-}
-
-void ChessboardCalibration::set_loger(LogBrowser* log)
-{
-    loger = log;
 }
 
 // 生成棋盘格的世界坐标
@@ -101,7 +97,10 @@ bool ChessboardCalibration::findChessboardCornersFromImage(Mat& image, vector<Po
     if (found) {
         cornerSubPix(gray, imagePoints, Size(11, 11), Size(-1, -1), TermCriteria(TermCriteria::EPS + TermCriteria::COUNT, 30, 0.001));
         drawCornersWithIndex(image, imagePoints);
-        *loger << "找到的角点数量: " << (int)imagePoints.size() << "\n";
+        QString ss;
+        ss = "找到的角点数量: " + QString::number(imagePoints.size()) + "\n";
+        emit worker->logMessage(ss);
+         
     }
 
     return found;
@@ -116,23 +115,28 @@ void ChessboardCalibration::calibrateAndShowResults(cv::Mat& image, const vector
         vector<Mat> rvecs, tvecs;
         calibrateCamera(worldPoints, imagePoints, cv::Size(image.rows, image.cols), cameraMatrix, distCoeffs, rvecs, tvecs);
 
-        *loger << "Camera Matrix: \n" << cameraMatrix << "\n";
+        // 将字符串流的内容转换为 QString
+        QString message = "Camera Matrix: \n" + QString::fromStdString(Mat2string(cameraMatrix)) + "\n";
+        emit worker->logMessage(message);
         output << "Camera Matrix: \n" << cameraMatrix << "\n";
-        *loger << "Distortion Coefficients: \n" << distCoeffs << "\n";
+
+        message = "Distortion Coefficients: \n" + QString::fromStdString(Mat2string(distCoeffs)) + "\n";
+        emit worker->logMessage(message);
         output<< "Distortion Coefficients: \n" << distCoeffs << "\n";
     }
     else {
-        *loger << "未找到足够的角点进行标定！\n";
+        emit worker->logMessage("未找到足够的角点进行标定！\n");
         output << "未找到足够的角点进行标定！\n";
     }
     output.close();
 }
 
 // 相机标定-主程序封装函数
-void ChessboardCalibration::runCalibration(CalibrationWorker* worker) {
+void ChessboardCalibration::runCalibration(CalibrationWorker* w) {
     using namespace std;
     using namespace cv;
     namespace fs = std::filesystem;
+    worker = w;
 
     vector<vector<Point3f>> worldPoints;
     vector<vector<Point2f>> imagePoints;
@@ -140,7 +144,9 @@ void ChessboardCalibration::runCalibration(CalibrationWorker* worker) {
     vector<Point3f> worldCorners = createKnownBoardPosition(board_size, square_size);
 
     if (!fs::exists(folderPath)) {
-        *loger << "指定的文件夹不存在: " << folderPath;
+        QString message;
+        message = "指定的文件夹不存在: " + QString::fromStdString(folderPath) + "\n";
+        emit worker->logMessage(message);
         return;
     }
 
@@ -155,12 +161,13 @@ void ChessboardCalibration::runCalibration(CalibrationWorker* worker) {
             image = imread(filename);
 
             if (image.empty()) {
-                *loger << "无法读取图片: " << filename << "\n";
+                QString message = "无法读取图片: " + QString::fromStdString(filename) + "\n";
                 continue;
             }
 
             QFileInfo fileinfo(QString::fromStdString(filename));
-            *loger << "开始处理图片 " << fileinfo.fileName() << "\n";
+            QString message = "开始处理图片 " + fileinfo.fileName() + "\n";
+            emit worker->logMessage(message);
 
             Mat preprocessed_image = preprocessImage(image);
 
@@ -170,6 +177,7 @@ void ChessboardCalibration::runCalibration(CalibrationWorker* worker) {
             }
 
             QStringList file_names = fileinfo.fileName().split(".");
+            emit worker->showimg(preprocessed_image);
             imwrite(outPath + "/" + file_names[0].toStdString() + "_processed.jpg", preprocessed_image);
 
             // 发射进度更新信号
@@ -177,7 +185,7 @@ void ChessboardCalibration::runCalibration(CalibrationWorker* worker) {
             emit worker->updateProgress(processedImages);
 
             if (worker->canceled) {
-                *loger << "操作被用户取消.\n";
+                emit worker->logMessage("操作被用户取消.\n");
                 break;
             }
 
@@ -185,6 +193,7 @@ void ChessboardCalibration::runCalibration(CalibrationWorker* worker) {
         }
     }
 
-    *loger << "图片处理完成.\n";
+    emit worker->logMessage("图片处理完成.\n");
+    emit worker->logMessage("开始计算相机参数\n");
     calibrateAndShowResults(image, worldPoints, imagePoints);
 }

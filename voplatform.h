@@ -43,15 +43,16 @@ private:
     QString workspace;                  // 工作空间
     QList<Calibration_pro*> calibrationFiles_;
     Calibration_pro* currentCalibrationPro;
-    QList<Matching_pro*> matchingFiles_;
-    Matching_pro* currentMatchingPro;
+    QList<EpipolarGeometry_pro*> epipolargeometryFiles_;
+    EpipolarGeometry_pro* currentEpipolarGeometryPro;
     QList<VO_pro*> voFiles_;
     VO_pro* currentVOPro;
 
-
     QStandardItem* calibrationItem;
-    QStandardItem* matchingItem;
+    QStandardItem* epipolargeometryItem;
     QStandardItem* voItem;
+
+    int current_pro;
 
     void Init_connect_slots();
     void Init_pro_tree();
@@ -60,6 +61,7 @@ private:
 private slots:
     // 图片框展示函数
     void onLoadPicture();
+    void showMatImg(cv::Mat);
     void updateLabelPixmap();
     void onResizeTimeout();
     void resizeEvent(QResizeEvent* event) override;
@@ -73,4 +75,10 @@ private slots:
     // 相机标定项目函数
     void onImageItemClicked(const QModelIndex& index);
     void onCalibrationRun();
+
+    // 对极几何项目函数
+    void onEpipolarGeometryRun();
+
+    // 项目结束函数
+    void finishPro_Solve();
 };

@@ -139,7 +139,7 @@
    <addaction name="action_save_pro"/>
    <addaction name="separator"/>
    <addaction name="camera_action"/>
-   <addaction name="featrue_action"/>
+   <addaction name="matching_action"/>
    <addaction name="actionVO"/>
    <addaction name="separator"/>
    <addaction name="start_action"/>
@@ -271,7 +271,7 @@
     <string>导入照片并标定</string>
    </property>
   </action>
-  <action name="featrue_action">
+  <action name="matching_action">
    <property name="checkable">
     <bool>true</bool>
    </property>

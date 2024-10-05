@@ -47,6 +47,26 @@ QString Project_Base::next()
     return textStream_.readLine();
 }
 
+std::string Project_Base::convertToRelative(const std::string& basePath, const std::string& absolutePath)
+{
+    namespace fs = std::filesystem;
+    try {
+        // 提取 basePath 的目录部分，即 cb_test_.vopro 所在的文件夹路径
+        fs::path baseDir = fs::absolute(basePath).parent_path();  // 提取目录
+        fs::path absolute = fs::absolute(absolutePath);  // 确保 absolutePath 是绝对路径
+
+        // 使用 std::filesystem::relative 计算相对路径
+        fs::path relativePath = fs::relative(absolute, baseDir);
+
+        // 返回相对路径的字符串表示
+        return relativePath.string();
+    }
+    catch (const fs::filesystem_error& e) {
+        // 捕获异常并输出错误信息
+        return absolutePath;  // 如果转换失败，返回原始绝对路径
+    }
+}
+
 void Project_Base::out_head_info()
 {
     QTextStream out(&file_);

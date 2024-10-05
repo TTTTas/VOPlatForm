@@ -96,9 +96,10 @@ public:
         return *this;
     }
 
+signals:
+    void logMessage(const QString& message);
 
-
-private:
+public slots:
     // 将格式化后的文本插入到 QTextBrowser 中
     void insertFormattedText(const QString& text) {
         QStringList lines = text.split('\n');  // 处理多行情况

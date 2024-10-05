@@ -3,6 +3,7 @@
 #define CALIBRATIONWORKER
 
 #include "qobject.h"
+#include "opencv2/core.hpp"
 
 class ChessboardCalibration;
 
@@ -19,6 +20,8 @@ public slots:
 
 signals:
     void updateProgress(int value);  // 发射更新进度的信号
+    void logMessage(const QString& message);  // 日志输出
+    void showimg(cv::Mat);
     void finished();
 
 public:

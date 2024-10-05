@@ -1,6 +1,8 @@
 #include "voplatform.h"
 #include "ChessboardCalibration.h"
+#include "EpipolarGeometry.h"
 #include "qprogressdialog.h"
+#include "EpipolarSettingsDialog.h"
 #include <qimage.h>
 #include <QFileDialog>
 #include <QDirIterator>
@@ -25,18 +27,17 @@ VOPlatForm::VOPlatForm(QWidget *parent)
     resizeTimer->setSingleShot(true);
     Init_connect_slots();
     Init_pro_tree();
-    currentCalibrationPro = new Calibration_pro("");
-    currentMatchingPro = new Matching_pro("");
-    currentVOPro = new VO_pro("");
+    currentCalibrationPro = nullptr;
+    currentEpipolarGeometryPro = nullptr;
+    currentVOPro = nullptr;
 
     *ui.Log_Info_Browser << "welcome\n";
-    ChessboardCalibration::set_loger(ui.Log_Info_Browser);
 }
 
 VOPlatForm::~VOPlatForm()
 {
     qDeleteAll(calibrationFiles_);
-    qDeleteAll(matchingFiles_);
+    qDeleteAll(epipolargeometryFiles_);
     qDeleteAll(voFiles_);
 }
 
@@ -67,6 +68,11 @@ void VOPlatForm::Init_connect_slots()
     // 标定项目
     connect(ui.camera_action, &QAction::triggered, this, &VOPlatForm::onCalibrationRun);
     connect(ui.actioncalibration, &QAction::triggered, this, &VOPlatForm::onCalibrationRun);
+
+    // 对极几何项目
+    connect(ui.actionmatching, &QAction::triggered, this, &VOPlatForm::onEpipolarGeometryRun);
+    connect(ui.matching_action, &QAction::triggered, this, &VOPlatForm::onEpipolarGeometryRun);
+
 }
 
 void VOPlatForm::Init_pro_tree()
@@ -76,12 +82,12 @@ void VOPlatForm::Init_pro_tree()
 
     // 创建项目类别
     calibrationItem = new QStandardItem(QIcon("./resource/camera1.png"), QString::fromLocal8Bit("标定项目 "));
-    matchingItem = new QStandardItem(QIcon("./resource/match.png"), QString::fromLocal8Bit("对极几何项目 "));
+    epipolargeometryItem = new QStandardItem(QIcon("./resource/match.png"), QString::fromLocal8Bit("对极几何项目 "));
     voItem = new QStandardItem(QIcon("./resource/video.png"), QString::fromLocal8Bit("VO项目 "));
 
     // 将项目类别添加到模型中
     pro_tree->appendRow(calibrationItem);
-    pro_tree->appendRow(matchingItem);
+    pro_tree->appendRow(epipolargeometryItem);
     pro_tree->appendRow(voItem);
 
     // 设置 QTreeView 的模型
@@ -125,8 +131,34 @@ void VOPlatForm::Update_pro_tree(Project_Base& pro)
     }
     case 2:
     {
-        matchingFiles_.append(new Matching_pro(pro.getPro_Path()));
-        matchingItem->appendRow(new QStandardItem(pro.getPro_Name()));
+        // 创建新的 EpipolarGeometry_pro 项目并添加到 epipolargeometryFiles_
+        EpipolarGeometry_pro* newEpipolarGeometry = new EpipolarGeometry_pro(pro.getPro_Path());
+        epipolargeometryFiles_.append(newEpipolarGeometry);
+        currentEpipolarGeometryPro = newEpipolarGeometry;  // 设置当前项目
+
+        // 为 epipolargeometryItem 添加项目名称
+        QStandardItem* newItem = new QStandardItem(pro.getPro_Name());
+        epipolargeometryItem->appendRow(newItem);
+
+        // 获取新项目文件夹中的图片文件（输入图片）
+        QStringList inputImages = newEpipolarGeometry->getImages();
+        foreach(const QString & imageName, inputImages) {
+            QString fullPath = currentEpipolarGeometryPro->inputfolder + "/" + imageName;
+            // 将图片文件添加到 epipolargeometryItem 的子项
+            QStandardItem* imageItem = new QStandardItem(imageName);
+            imageItem->setData(fullPath, Qt::UserRole);  // 将完整路径存储为子项的用户角色数据
+            newItem->appendRow(imageItem);
+        }
+
+        // 获取新项目文件夹中的图片文件（输出图片）
+        QStringList outputImages = newEpipolarGeometry->getOutImages();
+        foreach(const QString & imageName, outputImages) {
+            QString fullPath = currentEpipolarGeometryPro->outputfolder + "/" + imageName;
+            // 将图片文件添加到 epipolargeometryItem 的子项
+            QStandardItem* imageItem = new QStandardItem(imageName);
+            imageItem->setData(fullPath, Qt::UserRole);  // 将完整路径存储为子项的用户角色数据
+            newItem->appendRow(imageItem);
+        }
         break;
     }
     case 3:
@@ -162,6 +194,41 @@ void VOPlatForm::onLoadPicture()
     updateLabelPixmap();      // 调整图片大小并显示
 }
 
+void VOPlatForm::showMatImg(cv::Mat img)
+{
+    // 检查输入图像是否为空
+    if (img.empty()) {
+        QMessageBox::warning(this, tr("显示图像"), tr("无法显示图像，因为它是空的。"));
+        return;
+    }
+
+    // 将 cv::Mat 转换为 QImage
+    QImage qimg;
+    if (img.type() == CV_8UC1) {
+        // 如果图像是灰度图
+        qimg = QImage(img.data, img.cols, img.rows, img.step, QImage::Format_Grayscale8);
+    }
+    else if (img.type() == CV_8UC3) {
+        // 如果图像是 RGB 图
+        qimg = QImage(img.data, img.cols, img.rows, img.step, QImage::Format_RGB888).rgbSwapped();
+    }
+    else {
+        // 处理其他图像格式
+        QMessageBox::warning(this, tr("显示图像"), tr("不支持的图像格式。"));
+        return;
+    }
+
+    // 将 QImage 转换为 QPixmap
+    QPixmap pixmap = QPixmap::fromImage(qimg);
+
+    // 将图像设置到 originalPixmap 中
+    originalPixmap = pixmap;
+
+    // 在 QLabel 中显示图像
+    updateLabelPixmap();
+}
+
+
 void VOPlatForm::updateLabelPixmap()
 {
     if (!originalPixmap.isNull()) {
@@ -185,23 +252,39 @@ void VOPlatForm::onCreateNewPro()
     if (dialog.exec() == QDialog::Accepted) {
         Project_Base newProject;
         dialog.initializeProject(newProject);
+        QFileInfo folderinfo(newProject.getPro_Path());
+        ui.pro_label->setText(folderinfo.absolutePath());
+        workspace = folderinfo.absolutePath();
         switch (newProject.getPro_Type()) 
         {
         case 1:
-            calibrationFiles_.append(new Calibration_pro(newProject.getPro_Path()));
+        {
+            Calibration_pro* newpro = new Calibration_pro(newProject.getPro_Path());
+            currentCalibrationPro = newpro;
+            calibrationFiles_.append(newpro);
             calibrationItem->appendRow(new QStandardItem(newProject.getPro_Name()));
             break;
+        }
         case 2:
-            matchingFiles_.append(new Matching_pro(newProject.getPro_Path()));
-            matchingItem->appendRow(new QStandardItem(newProject.getPro_Name()));
+        {
+            EpipolarGeometry_pro* newpro = new EpipolarGeometry_pro(newProject.getPro_Path());
+            currentEpipolarGeometryPro = newpro;
+            epipolargeometryFiles_.append(newpro);
+            epipolargeometryItem->appendRow(new QStandardItem(newProject.getPro_Name()));
             break;
+        }
         case 3:
-            voFiles_.append(new VO_pro(newProject.getPro_Path()));
+        {
+            VO_pro* newpro = new VO_pro(newProject.getPro_Path());
+            currentVOPro = newpro;
+            voFiles_.append(newpro);
             voItem->appendRow(new QStandardItem(newProject.getPro_Name()));
             break;
+        }
         default:
             break;
         }
+        *ui.Log_Info_Browser << QString::fromLocal8Bit("新建项目：") + newProject.getPro_Name() + "\n";
     }
 }
 
@@ -219,22 +302,44 @@ void VOPlatForm::onOpenPro()
     if (!filePaths.isEmpty()) {
         QFileInfo folderinfo(filePaths[0]);
         ui.pro_label->setText(folderinfo.absolutePath());
+        workspace = folderinfo.absolutePath();
         // 遍历选择的文件
         foreach(const QString & filePath, filePaths) 
         {
             Project_Base pro(filePath);
-            
+            *ui.Log_Info_Browser << QString::fromLocal8Bit("打开项目：") + pro.getPro_Name() + "\n";
             Update_pro_tree(pro);
         }
     }
     else {
-        qDebug() << "No files selected.";
+        *ui.Log_Info_Browser << QString::fromLocal8Bit("未选中文件\n");
     }
 }
 
 void VOPlatForm::onSavePro()
 {
-
+    
+    switch (current_pro)
+    {
+    case 1:
+    {
+        currentCalibrationPro->save();
+        break;
+    }
+    case 2:
+    {
+        currentEpipolarGeometryPro->save();
+        break;
+    }
+    case 3:
+    {
+        currentVOPro->save();
+        break;
+    }
+    default:
+        break;
+    }
+    finishPro_Solve();
 }
 
 void VOPlatForm::onLoadProjects()
@@ -243,7 +348,7 @@ void VOPlatForm::onLoadProjects()
     QString workspace = QFileDialog::getExistingDirectory(this, QString::fromLocal8Bit("选择工作目录"), QString(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
     if (workspace.isEmpty()) {
-        qWarning() << "未选择文件夹.";
+        *ui.Log_Info_Browser << QString::fromLocal8Bit("未选择文件夹.");
         return;
     }
     ui.pro_label->setText(workspace);
@@ -251,8 +356,8 @@ void VOPlatForm::onLoadProjects()
     // 清除之前的项目
     calibrationFiles_.clear();
     calibrationItem->removeRows(0, calibrationItem->rowCount());
-    matchingFiles_.clear();
-    matchingItem->removeRows(0, matchingItem->rowCount());
+    epipolargeometryFiles_.clear();
+    epipolargeometryItem->removeRows(0, epipolargeometryItem->rowCount());
     voFiles_.clear();
     voItem->removeRows(0, voItem->rowCount());
 
@@ -282,7 +387,8 @@ void VOPlatForm::onImageItemClicked(const QModelIndex& index)
     if (!item) return; // 确保获取到有效的项
 
     // 判断该项是否是 calibrationItem 的子项的子项
-    if (item->parent() && item->parent()->parent() == calibrationItem) {
+    if ((item->parent() && item->parent()->parent() == calibrationItem) || (item->parent() && item->parent()->parent() == epipolargeometryItem))
+    {
         // 该项是 calibrationItem 的子项的子项，获取对应的完整路径
         QString imagePath = index.data(Qt::UserRole).toString();  // 获取点击子项的文本信息（即图片文件名）
 
@@ -303,6 +409,13 @@ void VOPlatForm::onImageItemClicked(const QModelIndex& index)
 
 void VOPlatForm::onCalibrationRun()
 {
+    current_pro = 1;
+    if (currentCalibrationPro == nullptr)
+    {
+        *ui.Log_Info_Browser << QString::fromLocal8Bit("未选择项目\n");
+        return;
+    }
+    ui.statusBar->showMessage(QString::fromLocal8Bit("当前标定项目：") + currentCalibrationPro->getPro_Name());
     CalibrationSettingsDialog dialog;
     if (dialog.exec() == QDialog::Accepted) {
         QString inputFolder = dialog.getInputFolderPath();
@@ -312,6 +425,9 @@ void VOPlatForm::onCalibrationRun()
         int bh = dialog.getBoardHeight();
         float ss = dialog.getSquareSize();
         double sf = dialog.getScaleFactor();
+
+        currentCalibrationPro->update(bw, bh, ss, sf, inputFolder, outputFolder, resultFile);
+        currentCalibrationPro->save();
 
         // 将获取的参数传入标定项目
         ChessboardCalibration::init_Calibration(bw, bh, ss, sf, inputFolder.toStdString(),outputFolder.toStdString(),resultFile.toStdString());
@@ -332,38 +448,102 @@ void VOPlatForm::onCalibrationRun()
         progressDialog->show();
 
         // 创建并启动工作线程
-        QPointer<QThread> thread = new QThread();
-        std::shared_ptr<CalibrationWorker> worker = std::make_shared<CalibrationWorker>();
+        QThread* thread = new QThread();
+        CalibrationWorker* worker = new CalibrationWorker();
 
         worker->moveToThread(thread);
 
         // 连接信号与槽
-        connect(worker.get(), &CalibrationWorker::finished, thread, &QThread::quit);
-        connect(worker.get(), &CalibrationWorker::finished, worker.get(), &CalibrationWorker::deleteLater);
+        connect(worker, &CalibrationWorker::finished, this, &VOPlatForm::finishPro_Solve);
+        connect(worker, &CalibrationWorker::updateProgress, progressDialog, &QProgressDialog::setValue);
         connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+        // 日志信号槽
+        connect(worker, &CalibrationWorker::logMessage, ui.Log_Info_Browser, &LogBrowser::insertFormattedText);
+        connect(worker, &CalibrationWorker::showimg, this, &VOPlatForm::showMatImg);
 
         // 启动线程
-        connect(thread, &QThread::started, worker.get(), &CalibrationWorker::process);
+        connect(thread, &QThread::started, worker, &CalibrationWorker::process);
         thread->start();
 
-        // 清除之前的项目
-        calibrationFiles_.clear();
-        calibrationItem->removeRows(0, calibrationItem->rowCount());
-        matchingFiles_.clear();
-        matchingItem->removeRows(0, matchingItem->rowCount());
-        voFiles_.clear();
-        voItem->removeRows(0, voItem->rowCount());
+    }
+}
 
-        // 递归搜索 .pro 文件
-        QDir dir(workspace);
-        QDirIterator it(dir.absolutePath(), QStringList() << "*.vopro", QDir::Files | QDir::NoSymLinks, QDirIterator::Subdirectories);
+void VOPlatForm::onEpipolarGeometryRun()
+{
+    current_pro = 2;
+    if (currentEpipolarGeometryPro == nullptr)
+    {
+        *ui.Log_Info_Browser << QString::fromLocal8Bit("未选择项目\n");
+        return;
+    }
+    ui.statusBar->showMessage(QString::fromLocal8Bit("当前对极几何项目：") + currentEpipolarGeometryPro->getPro_Name());
+    EpipolarSettingsDialog dialog;
+    if (dialog.exec() == QDialog::Accepted) {
+        QString inputFolder = dialog.getInputFolderPath();
+        QString outputFolder = dialog.getOutputFolderPath();
+        QString resultFile = dialog.getResultFilePath();
 
-        while (it.hasNext()) {
-            QString filePath = it.next();
-            Project_Base pro(filePath);
+        currentEpipolarGeometryPro->update(inputFolder, outputFolder, resultFile);
+        currentEpipolarGeometryPro->save();
 
-            Update_pro_tree(pro);
+        // 将获取的参数传入标定项目
+        EpipolarGeometry::Init(inputFolder.toStdString(), outputFolder.toStdString(), resultFile.toStdString());
+
+        int totalImages = 0;
+
+        for (const auto& entry : std::filesystem::directory_iterator(inputFolder.toStdString())) {
+            if (entry.path().extension() == ".JPG" || entry.path().extension() == ".jpg"
+                || entry.path().extension() == ".JPEG" || entry.path().extension() == ".jpeg"
+                || entry.path().extension() == ".png" || entry.path().extension() == ".PNG") {
+                ++totalImages;
+            }
         }
+
+        QProgressDialog* progressDialog = new QProgressDialog(QString::fromLocal8Bit("正在进行对极几何匹配..."), QString::fromLocal8Bit("取消"), 0, totalImages - 1, this);
+        progressDialog->setWindowModality(Qt::WindowModal);
+        progressDialog->setValue(0);
+        progressDialog->show();
+
+        // 创建并启动工作线程
+        QThread* thread = new QThread();
+        EpipolarGeometryWorker* worker = new EpipolarGeometryWorker();
+
+        worker->moveToThread(thread);
+
+        // 连接信号与槽
+        connect(worker, &EpipolarGeometryWorker::finished, this, &VOPlatForm::finishPro_Solve);
+        connect(worker, &EpipolarGeometryWorker::updateProgress, progressDialog, &QProgressDialog::setValue);
+        connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+        // 日志信号槽
+        connect(worker, &EpipolarGeometryWorker::logMessage, ui.Log_Info_Browser, &LogBrowser::insertFormattedText);
+        connect(worker, &EpipolarGeometryWorker::showimg, this, &VOPlatForm::showMatImg);
+
+        // 启动线程
+        connect(thread, &QThread::started, worker, &EpipolarGeometryWorker::process);
+        thread->start();
+
+    }
+}
+
+void VOPlatForm::finishPro_Solve()
+{
+    // 清除之前的项目
+    calibrationFiles_.clear();
+    calibrationItem->removeRows(0, calibrationItem->rowCount());
+    epipolargeometryFiles_.clear();
+    epipolargeometryItem->removeRows(0, epipolargeometryItem->rowCount());
+    voFiles_.clear();
+    voItem->removeRows(0, voItem->rowCount());
+
+    // 递归搜索 .pro 文件
+    QDir dir(workspace);
+    QDirIterator it(dir.absolutePath(), QStringList() << "*.vopro", QDir::Files | QDir::NoSymLinks, QDirIterator::Subdirectories);
+
+    while (it.hasNext()) {
+        QString filePath = it.next();
+        Project_Base pro(filePath);
+
+        Update_pro_tree(pro);
     }
 }
 

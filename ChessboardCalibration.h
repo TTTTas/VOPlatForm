@@ -19,16 +19,13 @@ public:
     static double scale_factor;
     static std::string folderPath;
     static cv::Size board_size;
-
+    static CalibrationWorker* worker;
     // 文件输出
     static std::string outPath;
     static std::string resultPath;
-    // 控制台输出
-    static LogBrowser* loger;
 
     // 声明静态初始化函数
     static void init_Calibration(int bw, int bh, float ss, double sf, const std::string& fp, const std::string& op, const std::string& rp);
-    static void set_loger(LogBrowser* log);
     // 静态方法声明
     static std::vector<cv::Point3f> createKnownBoardPosition(cv::Size boardSize, float squareEdgeLength);
     static cv::Mat resizeImage(const cv::Mat& image, double scale_factor);

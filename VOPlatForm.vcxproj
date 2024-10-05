@@ -107,7 +107,9 @@
     <ClCompile Include="CalibrationWorker.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="ChessboardCalibration.cpp" />
+    <ClCompile Include="comm.cpp" />
     <ClCompile Include="EpipolarGeometry.cpp" />
+    <ClCompile Include="EpipolarGeometryWorker.cpp" />
     <ClCompile Include="NewProjectDialog.cpp" />
     <ClCompile Include="projects.cpp" />
     <ClCompile Include="VO_pro.cpp" />
@@ -126,8 +128,11 @@
     <QtMoc Include="CalibrationWorker.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="ChessboardCalibration.h" />
+    <ClInclude Include="comm_funcs.h" />
     <ClInclude Include="EpipolarGeometry.h" />
     <QtMoc Include="logbrowser.h" />
+    <QtMoc Include="EpipolarSettingsDialog.h" />
+    <QtMoc Include="EpipolarGeometryWorker.h" />
     <ClInclude Include="Matching_pro.h" />
     <QtMoc Include="NewProjectDialog.h" />
     <ClInclude Include="Project_Base.h" />

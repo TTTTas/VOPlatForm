@@ -12,6 +12,7 @@
 #include <vector>
 #include <opencv2/calib3d.hpp>
 #include <string>
+#include "EpipolarGeometryWorker.h"
 
 using namespace std;
 using namespace cv;
@@ -22,8 +23,8 @@ public:
 
     // 图片和文件路径
     static Mat img1, img2, img3;  // 对于后续任务3，不再是两张图片文件，而是img，故需要这两个变量
-    const static string filename1, filename2, filename3;
-    const static string folder;
+    static string filename1, filename2, filename3;
+    static string inputfolder, outputfolder, resultpath;
 
     // 点的位置与属性
     static vector<KeyPoint> keypoints1, keypoints2, keypoints3;  // 关键点
@@ -41,10 +42,14 @@ public:
     static Mat R, t;  // 外部参数
     static Mat E, F;  // 本质矩阵和基础矩阵
 
+    // 线程管理器
+    static EpipolarGeometryWorker* worker;
     // 初始化图像
+    static void Init(string path1, string path2, string path3);
+
     static int initialize();
 
-    static Mat readNextPNG(const std::string& folderPath);
+    static Mat readNextImg(const std::string& folderPath);
 
     // 降低分辨率到 1080P
     static cv::Mat resizeImage(const cv::Mat& image);
@@ -81,7 +86,7 @@ public:
     //    const std::vector<cv::KeyPoint>& keypoints2, const std::vector<cv::KeyPoint>& keypoints3);
 
     // 主函数
-    static void Run();
+    static void Run(EpipolarGeometryWorker* w);
 
 };
 

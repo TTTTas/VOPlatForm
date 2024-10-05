@@ -43,6 +43,7 @@ QString Calibration_pro::nextCalibrationLine()
 
 void Calibration_pro::update(int bw, int bh, float ss, double sf, const QString& fp, const QString& op, const QString& rp)
 {
+    namespace fs = std::filesystem;
     board_width = bw;
     board_height = bh;
     square_size = ss;
@@ -68,11 +69,11 @@ void Calibration_pro::save()
     out << QString::number(getPro_Type()) << "\n";
 
     // 写入输入和输出文件夹路径（相对路径）
-    out << inputfolder << "\n";
-    out << outputfolder << "\n";
+    out << "/" + QString::fromStdString(convertToRelative(getPro_Path().toStdString(), inputfolder.toStdString())) << "\n";
+    out << "/" + QString::fromStdString(convertToRelative(getPro_Path().toStdString(), outputfolder.toStdString())) << "\n";
 
     // 写入结果文件路径
-    out << resultpath << "\n";
+    out << QString::fromStdString(convertToRelative(getPro_Path().toStdString(), resultpath.toStdString())) << "\n";
 
     // 写入 board_width、board_height、square_size、scale_factor
     out << QString::number(board_width) << "\n";

@@ -52,9 +52,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="comm.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Calibration_pro.cpp">
       <Filter>Source Files\project_cc</Filter>
     </ClCompile>
@@ -82,6 +79,12 @@
     <ClCompile Include="CalibrationWorker.cpp">
       <Filter>Source Files\project_cc</Filter>
     </ClCompile>
+    <ClCompile Include="EpipolarGeometryWorker.cpp">
+      <Filter>Source Files\project_cc</Filter>
+    </ClCompile>
+    <ClCompile Include="comm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Matching_pro.h">
@@ -99,11 +102,14 @@
     <ClInclude Include="EpipolarGeometry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Project_Base.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Calibration_pro.h">
       <Filter>Header Files\project_head</Filter>
+    </ClInclude>
+    <ClInclude Include="Project_Base.h">
+      <Filter>Header Files\project_head</Filter>
+    </ClInclude>
+    <ClInclude Include="comm_funcs.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -117,6 +123,12 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="CalibrationWorker.h">
+      <Filter>Header Files\project_head</Filter>
+    </QtMoc>
+    <QtMoc Include="EpipolarSettingsDialog.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="EpipolarGeometryWorker.h">
       <Filter>Header Files\project_head</Filter>
     </QtMoc>
   </ItemGroup>

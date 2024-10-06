@@ -87,7 +87,7 @@ public:
 
     // Ö÷º¯Êý
     static void Run(EpipolarGeometryWorker* w);
-
+    static void VORun(EpipolarGeometryWorker* w);
 };
 
 #endif 

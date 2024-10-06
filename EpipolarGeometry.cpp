@@ -798,3 +798,96 @@ void EpipolarGeometry::Run(EpipolarGeometryWorker* w)
 
 }
 
+void EpipolarGeometry::VORun(EpipolarGeometryWorker* w)
+{
+    worker = w;
+    // 初始化类，传入图像路径
+    if (initialize() == -1)   return;
+
+    ofstream out, out_good_point, out_all_point;
+    out.open(resultpath, ios::out | ios::trunc); out.close();
+    out_good_point.open(outputfolder + "/points.txt", ios::out | ios::trunc); out_good_point.close();
+    out_all_point.open(outputfolder + "/All_points.txt", ios::out | ios::trunc); out_all_point.close();
+    int totalimgs = 0;
+
+    Point3d trajectory(0, 0, 0);
+
+    while (!img3.empty())
+    {
+        img1 = img2.clone();
+        filename1 = filename2;
+        img2 = img3.clone();
+        filename2 = filename3;
+
+        ofstream out;
+        out.open(resultpath, ios::out | ios::app);
+        emit worker->logMessage(QString::fromLocal8Bit("开始计算: ") + QString::fromStdString(filename1) + "  ->  " + QString::fromStdString(filename2) + "\n");
+        out << "开始计算: " << filename1 << "  ->  " << filename2 << "\n";
+        out.close();
+        // 1. 检测和计算特征点及描述符
+        detectAndComputeFeatures(img1, img2, keypoints1, keypoints2, descriptors1, descriptors2);
+
+        // 2. 匹配特征
+        vector<DMatch> matches = matchFeatures();
+
+        // 3. 筛选好的匹配点
+        vector<DMatch> good_matches = filterGoodMatches(matches);
+
+        // 4. 绘制并显示匹配结果
+        drawAndShowMatches(img1, img2, keypoints1, keypoints2, matches, good_matches);
+
+        // 5. 估计相机运动
+        pose_estimation_2d2d(keypoints1, keypoints2, good_matches);
+
+        // 6. 验证
+        verify(keypoints1, keypoints2, good_matches);
+
+
+        // 7. 三角测量
+        vector<Point3d> points3D, pointsAll3D, pointsCDIn3D, pointCDIn34;
+
+        triangulation(good_matches, points3D);
+        triangulation(matches, pointsAll3D);
+
+        // 8. 重投影验证
+        verifyReprojection(good_matches, points3D);
+
+        ofstream out_good_point, out_all_point, out_trajectory;
+        out_good_point.open(outputfolder + "/points.txt", ios::out | ios::app);
+        out_all_point.open(outputfolder + "/All_points.txt", ios::out | ios::app);
+        out_trajectory.open(outputfolder + "/trajectory.txt", ios::out | ios::app);
+
+        out_good_point << filename1 << " -> " << filename2 << "\n";
+        out_good_point << fixed << setprecision(6);
+        out_good_point << left << setw(12) << "x\t" << setw(12) << "y\t" << setw(12) << "z\n";
+        for (const Point3d point : points3D)
+        {
+            out_good_point << left << setw(12) << point.x << "\t" << setw(12) << point.y << "\t" << setw(12) << point.z << "\n";
+            out_good_point << "————————————————————————————————————————————————————————————" << std::endl;
+        }
+
+        out_all_point << filename1 << " -> " << filename2 << "\n";
+        out_all_point << fixed << setprecision(6);
+        out_all_point << left << setw(12) << "x\t" << setw(12) << "y\t" << setw(12) << "z\n";
+        for (const Point3d point : pointsAll3D)
+        {
+            out_all_point << left << setw(12) << point.x << "\t" << setw(12) << point.y << "\t" << setw(12) << point.z << "\n";
+            out_all_point << "————————————————————————————————————————————————————————————" << std::endl;
+        }
+
+        trajectory.x += t.at<double>(0, 0);
+        trajectory.y += t.at<double>(1, 0);
+        trajectory.z += t.at<double>(2, 0);
+
+        out_trajectory << fixed << setprecision(6);
+        out_trajectory << left << setw(12) << "x\t" << setw(12) << "y\t" << setw(12) << "z\n";
+        out_trajectory << left << setw(12) << trajectory.x << setw(12) << trajectory.y << setw(12) << trajectory.z << "\n";
+        
+
+        totalimgs++;
+        emit worker->updateProgress(totalimgs);
+        img3 = readNextImg(inputfolder);
+    }
+    
+}
+

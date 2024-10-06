@@ -79,6 +79,9 @@ private slots:
     // 对极几何项目函数
     void onEpipolarGeometryRun();
 
+    // VO项目
+    void onVORun();
+
     // 项目结束函数
     void finishPro_Solve();
 };

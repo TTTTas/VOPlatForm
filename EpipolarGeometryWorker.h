@@ -17,6 +17,8 @@ public slots:
     // 子线程中执行对极几何处理的函数
     void process();
 
+    void process_VO();
+
     // 取消操作
     void cancel();
 

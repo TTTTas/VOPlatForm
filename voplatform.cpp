@@ -73,6 +73,10 @@ void VOPlatForm::Init_connect_slots()
     connect(ui.actionmatching, &QAction::triggered, this, &VOPlatForm::onEpipolarGeometryRun);
     connect(ui.matching_action, &QAction::triggered, this, &VOPlatForm::onEpipolarGeometryRun);
 
+    // VO项目
+    connect(ui.actionvo, &QAction::triggered, this, &VOPlatForm::onVORun);
+    connect(ui.actionVO, &QAction::triggered, this, &VOPlatForm::onVORun);
+
 }
 
 void VOPlatForm::Init_pro_tree()
@@ -163,7 +167,9 @@ void VOPlatForm::Update_pro_tree(Project_Base& pro)
     }
     case 3:
     {
-        voFiles_.append(new VO_pro(pro.getPro_Path()));
+        VO_pro* newpro = new VO_pro(pro.getPro_Path());
+        currentVOPro = newpro;
+        voFiles_.append(newpro);
         voItem->appendRow(new QStandardItem(pro.getPro_Name()));
         break;
     }
@@ -513,6 +519,64 @@ void VOPlatForm::onEpipolarGeometryRun()
         // 连接信号与槽
         connect(worker, &EpipolarGeometryWorker::finished, this, &VOPlatForm::finishPro_Solve);
         connect(worker, &EpipolarGeometryWorker::updateProgress, progressDialog, &QProgressDialog::setValue);
+        connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+        // 日志信号槽
+        connect(worker, &EpipolarGeometryWorker::logMessage, ui.Log_Info_Browser, &LogBrowser::insertFormattedText);
+        connect(worker, &EpipolarGeometryWorker::showimg, this, &VOPlatForm::showMatImg);
+
+        // 启动线程
+        connect(thread, &QThread::started, worker, &EpipolarGeometryWorker::process);
+        thread->start();
+
+    }
+}
+
+void VOPlatForm::onVORun()
+{
+    current_pro = 3;
+    if (currentVOPro == nullptr)
+    {
+        *ui.Log_Info_Browser << QString::fromLocal8Bit("未选择项目\n");
+        return;
+    }
+    ui.statusBar->showMessage(QString::fromLocal8Bit("当前对极几何项目：") + currentVOPro->getPro_Name());
+    EpipolarSettingsDialog dialog;
+    if (dialog.exec() == QDialog::Accepted) {
+        QString inputFolder = dialog.getInputFolderPath();
+        QString outputFolder = dialog.getOutputFolderPath();
+        QString resultFile = dialog.getResultFilePath();
+
+        currentVOPro->update(inputFolder, outputFolder, resultFile);
+        currentVOPro->save();
+
+        // 将获取的参数传入标定项目
+        EpipolarGeometry::Init(inputFolder.toStdString(), outputFolder.toStdString(), resultFile.toStdString());
+
+        int totalImages = 0;
+
+        for (const auto& entry : std::filesystem::directory_iterator(inputFolder.toStdString())) {
+            if (entry.path().extension() == ".JPG" || entry.path().extension() == ".jpg"
+                || entry.path().extension() == ".JPEG" || entry.path().extension() == ".jpeg"
+                || entry.path().extension() == ".png" || entry.path().extension() == ".PNG") {
+                ++totalImages;
+            }
+        }
+
+        QProgressDialog* progressDialog = new QProgressDialog(QString::fromLocal8Bit("正在进行对极几何匹配..."), QString::fromLocal8Bit("取消"), 0, totalImages - 1, this);
+        progressDialog->setWindowModality(Qt::WindowModal);
+        progressDialog->setValue(0);
+        progressDialog->show();
+
+        // 创建并启动工作线程
+        QThread* thread = new QThread();
+        EpipolarGeometryWorker* worker = new EpipolarGeometryWorker();
+
+        worker->moveToThread(thread);
+
+        // 连接信号与槽
+        connect(worker, &EpipolarGeometryWorker::finished, this, &VOPlatForm::finishPro_Solve);
+        connect(worker, &EpipolarGeometryWorker::updateProgress, progressDialog, &QProgressDialog::setValue);
+        connect()
         connect(thread, &QThread::finished, thread, &QThread::deleteLater);
         // 日志信号槽
         connect(worker, &EpipolarGeometryWorker::logMessage, ui.Log_Info_Browser, &LogBrowser::insertFormattedText);

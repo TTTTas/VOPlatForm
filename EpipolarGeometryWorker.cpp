@@ -7,6 +7,12 @@ void EpipolarGeometryWorker::process()
 	emit finished();
 }
 
+void EpipolarGeometryWorker::process_VO()
+{
+	EpipolarGeometry::VORun(this);
+	emit finished();
+}
+
 void EpipolarGeometryWorker::cancel() {
 	canceled = true;
 }

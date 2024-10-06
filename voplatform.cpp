@@ -576,7 +576,6 @@ void VOPlatForm::onVORun()
         // 连接信号与槽
         connect(worker, &EpipolarGeometryWorker::finished, this, &VOPlatForm::finishPro_Solve);
         connect(worker, &EpipolarGeometryWorker::updateProgress, progressDialog, &QProgressDialog::setValue);
-        connect()
         connect(thread, &QThread::finished, thread, &QThread::deleteLater);
         // 日志信号槽
         connect(worker, &EpipolarGeometryWorker::logMessage, ui.Log_Info_Browser, &LogBrowser::insertFormattedText);
